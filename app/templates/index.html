@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+<h1>{% block title %}City Explorer{% endblock %}</h1>
+
+{% block content %}
+    <section>
+        <div style="background-image: url('{{ url_for('static', filename='assets/landing.svg') }}');
+        background-size: cover; 
+        background-position: center; 
+        background-repeat: no-repeat;">
+            <div class="container max-w-screen-lg mx-auto sm:pt-10 pt-7 px-3 min-h-[300px]">
+                <div class="grid grid-cols-2 gap-10">
+                    <div class="flex items-center sm:w-[95%] col-span-2 sm:col-span-1">
+                        <div>
+                            <h1 class="text-4xl font-bold"><span class="text-white">Explore More, </span><span class="text-[#EFBE77]">Discover Better!</span></h1>
+                            <p class="font-normal text-[#F1F1F1] md:text-lg text-base mt-5">Welcome to City Explorer - your go-to app for uncovering the best spots and real-time weather updates in any city. Start your adventure now!</p>
+                            <div class="mt-5">
+                                <a href="{{url_for('auth.login')}}" rel="noopener noreferrer" class="bg-[#E1D7B7] px-5 py-1.5 rounded-lg text-base text-[#1E2A5E] font-semibold">Login</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sm:block hidden">
+                        <div class="w-10/12">
+                            <img src="{{ url_for('static', filename='assets/landing2.png') }}" alt="landing photo">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </section>
+{% endblock %}
