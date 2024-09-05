@@ -1,8 +1,8 @@
 DROP TABLE IF EXISTS user;
-DROP TABLE IF EXISTS post;
 
 CREATE TABLE user(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    character TEXT DEFAULT 'character1.svg',
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,

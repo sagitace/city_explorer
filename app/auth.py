@@ -5,44 +5,41 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.db import get_db
+from app.user import index
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/register', methods=('POST', 'GET'))
-def register():
-    if g.user is not None:
-        if request.method == 'POST':
-            firstname = request.form['firstname']
-            lastname = request.form['lastname']
-            email = request.form['email']
-            password = request.form['password']
-            db = get_db()
-            error = None
+def register():  
+    if request.method == 'POST':
+        firstname = request.form['firstname']
+        lastname = request.form['lastname']
+        email = request.form['email']
+        password = request.form['password']
+        db = get_db()
+        error = None
             
-            if not firstname:
-                error = 'First name is required.'
-            elif not lastname:
-                error = 'Last name is required.'
-            elif not email:
-                error = 'Email is required.'
-            elif not password:
-                error = 'Password is required.'
+        if not firstname:
+            error = 'First name is required.'
+        elif not lastname:
+            error = 'Last name is required.'
+        elif not email:
+            error = 'Email is required.'
+        elif not password:
+            error = 'Password is required.'
                 
-            if error is None:
-                try:
-                    db.execute(
-                        "INSERT INTO user (firstname, lastname, email, password) VALUES (?, ?, ?, ?)",
-                        (firstname, lastname, email, generate_password_hash(password)),
-                    )
-                    db.commit()
-                except db.IntegrityError:
-                    error = f"User {email} is already registered."
-                else:
-                    return redirect(url_for("auth.login"))
-            
-            flash(error)
-        else:
-            return redirect(url_for("index"))
+        if error is None:
+            try:
+                db.execute(
+                    "INSERT INTO user (firstname, lastname, email, password) VALUES (?, ?, ?, ?)",
+                    (firstname, lastname, email, generate_password_hash(password)),
+                )
+                db.commit()
+            except db.IntegrityError:
+                error = f"User {email} is already registered."
+            else:
+                return redirect(url_for("auth.login"))  
+        flash(error)        
     return render_template('auth/register.html')
 
 @bp.route('/login', methods=('GET', 'POST'))
@@ -64,7 +61,7 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user['id']
-            return redirect(url_for('index'))
+            return redirect(url_for('user.index'))
         
         flash(error)
         

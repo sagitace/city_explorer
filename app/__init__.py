@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, g
 
 def create_app():
     # create and configure appp
@@ -20,6 +20,8 @@ def create_app():
     
     @app.route('/')
     def index():
+        if g.user is not None:
+            return redirect(url_for('user.index'))
         return render_template('index.html')
     
     from . import db
@@ -28,4 +30,8 @@ def create_app():
     from . import auth
     app.register_blueprint(auth.bp)
 
+    from . import user
+    app.register_blueprint(user.bp)
+    app.add_url_rule('/', endpoint='index')
+    
     return app

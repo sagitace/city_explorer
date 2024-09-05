@@ -1,0 +1,80 @@
+{% extends 'user/base.html' %}
+
+<h1>{% block title %}Welcome{% endblock %}</h1>
+
+{% block content %}
+    <section class="max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8">
+       
+        <div class="px-4 mx-auto max-w-screen-xl lg:pb-16 lg:px-6">
+            <div class="mx-auto max-w-screen-sm text-center mb-8">
+                <h2 class="mb-4 text-3xl lg:text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Welcome to City Explorer Philippines!</h2>
+                <p class="font-light text-gray-500 sm:text-xl dark:text-gray-400">Discover the best places, get real-time weather updates, and explore your city like never before. Let's start your adventure!</p>
+            </div> 
+
+            <div class="mb-3">
+                <form class="max-w-lg flex space-x-1 items-center" method="POST">   
+                    
+                    <div class="relative w-1/2">
+                        <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                            </svg>
+                        </div>
+                        <input type="search" name="city" id="default-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" placeholder="Search for cities" value="{{ city }}"/>
+                    </div>
+
+                    <div class="relative w-1/4">
+                        <select name="category" id="category" class="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="10000,12000,13000,19000,16000,17000">All</option>
+                            <option value="10000">Arts and Entertainment</option>
+                            <option value="12000">Community and Government</option>
+                            <option value="13000">Dining and Drinking</option>
+                            <option value="19000">Travel and Transportation</option>
+                            <option value="16000">Landmarks and Outdoors</option>
+                            <option value="17000">Retail</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Search</button>
+                    </div>
+                </form>
+            </div>
+
+            <h1 class="text-xl font-semibold mb-2">Places in {{ city }}</h1>
+
+            <div class="grid gap-4 lg:grid-cols-3">
+                {% for place in places %}
+                    <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md">
+                        <div>
+                            {% if place.photos %}
+                                <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" alt="Photo of {{ place.name }}" class="w-full h-52 object-cover rounded-md">
+                            {% else %}
+                                <p>No photo available</p>
+                            {% endif %}
+                        </div>
+                        <h2 class="mb-2 text-lg font-bold tracking-tight text-gray-900"><a href="#">{{ place.name }}</a></h2>
+
+                        <p class="text-xs font-semibold text-white mb-1"> <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span></p>
+
+                        <p class="mb-5 font-light text-base text-gray-500 dark:text-gray-400">{{ place.location['formatted_address'] }}</p>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-4">
+                                <img class="w-7 h-7 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png" alt="Jese Leos avatar" />
+                                <span class="font-medium dark:text-white">
+                                    Jese Leos
+                                </span>
+                            </div>
+                            <a href="#" class="inline-flex items-center font-medium text-primary-600 hover:underline">
+                                Read more
+                                <svg class="ml-2 w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                            </a>
+                        </div>
+                    </article> 
+                {% endfor %}
+               
+            </div>  
+        </div>
+    </section>
+{% endblock %}
