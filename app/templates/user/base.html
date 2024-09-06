@@ -7,6 +7,7 @@
         <title>{% block title %} {% endblock %}</title>
         <link rel="icon" type="image/x-icon" href="{{url_for('static', filename='favicon.ico')}}">
         <link rel="stylesheet" href="{{url_for('static',filename='dist/css/output.css')}}"/>
+        <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet" />
     </head>
     <body class="bg-slate-100">
         <button data-drawer-target="default-sidebar" data-drawer-toggle="default-sidebar" aria-controls="default-sidebar" type="button" class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
@@ -66,7 +67,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="#" class="flex items-center p-2 text-base font-semibold text-white hover:text-blue-900 rounded-lg hover:bg-gray-100 group transition-all ease-in-out duration-300">
+                    <a href="{{url_for('user.popular')}}" class="flex items-center p-2 text-base font-semibold text-white hover:text-blue-900 rounded-lg hover:bg-gray-100 group transition-all ease-in-out duration-300">
                         <svg class="w-6 h-6 text-white group-hover:text-blue-800 transition-all ease-in-out duration-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M13.849 4.22c-.684-1.626-3.014-1.626-3.698 0L8.397 8.387l-4.552.361c-1.775.14-2.495 2.331-1.142 3.477l3.468 2.937-1.06 4.392c-.413 1.713 1.472 3.067 2.992 2.149L12 19.35l3.897 2.354c1.52.918 3.405-.436 2.992-2.15l-1.06-4.39 3.468-2.938c1.353-1.146.633-3.336-1.142-3.477l-4.552-.36-1.754-4.17Z"/>
                         </svg>
@@ -80,6 +81,7 @@
     <div class="sm:pl-64">{% block content %}{% endblock %}</div>
     
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
+    <script src="../path/to/flowbite/dist/flowbite.min.js"></script>
     <script src="{{url_for('static', filename='script/script.js')}}"></script>
 </body>
 </html>

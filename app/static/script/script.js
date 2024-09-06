@@ -5,3 +5,7 @@ window.addEventListener("load", function (event) {
 document.addEventListener("DOMContentLoaded", function (event) {
   document.getElementById("readProductButton").click();
 });
+
+document.addEventListener("DOMContentLoaded", function (event) {
+  document.getElementById("readPlaceButton").click();
+});

@@ -7,72 +7,139 @@
        
         <div class="px-4 mx-auto max-w-screen-xl lg:pb-16 lg:px-6">
             <div class="mx-auto max-w-screen-sm text-center mb-8">
-                <h2 class="mb-4 text-3xl lg:text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Welcome to City Explorer Philippines!</h2>
-                <p class="font-light text-gray-500 sm:text-xl dark:text-gray-400">Discover the best places, get real-time weather updates, and explore your city like never before. Let's start your adventure!</p>
+                <h2 class="mb-4 text-3xl lg:text-4xl tracking-tight font-extrabold text-gray-800">Welcome to City Explorer Philippines!</h2>
+                <p class="font-light text-gray-500 sm:text-xl">Discover the best places, get real-time weather updates, and explore your city like never before. Let's start your adventure!</p>
             </div> 
 
-            <div class="mb-3">
-                <form class="max-w-lg flex space-x-1 items-center" method="POST">   
-                    
-                    <div class="relative w-1/2">
-                        <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
-                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                            </svg>
-                        </div>
-                        <input type="search" name="city" id="default-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" placeholder="Search for cities" value="{{ city }}" required/>
-                    </div>
-
-                    <div class="relative w-1/4">
-                        <select name="category" id="category" class="block w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="10000,12000,13000,19000,16000,17000" {%if categories == '10000,12000,13000,19000,16000,17000'%} selected {%endif%}>All</option>
-                            <option value="10000" {%if categories == '10000'%} selected {%endif%}>Arts and Entertainment</option>
-                            <option value="12000" {%if categories == '12000'%} selected {%endif%}>Community and Government</option>
-                            <option value="13000" {%if categories == '13000'%} selected {%endif%}>Dining and Drinking</option>
-                            <option value="19000" {%if categories == '19000'%} selected {%endif%}>Travel and Transportation</option>
-                            <option value="16000" {%if categories == '16000'%} selected {%endif%}>Landmarks and Outdoors</option>
-                            <option value="17000" {%if categories == '17000'%} selected {%endif%}>Retail</option>
-                        </select>
-                    </div>
-
+           <section>
+                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
                     <div>
-                        <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Search</button>
-                    </div>
-                </form>
-            </div>
+                        <div id="gallery" class="relative w-full" data-carousel="slide">
+                            <!-- Carousel wrapper -->
+                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96 ">
 
-            <h1 class="text-xl font-semibold mb-2">Places in {{ city }}</h1>
-
-           <div class="grid gap-4 lg:grid-cols-3">
-                {% for place in places %}
-                    <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md flex flex-col h-auto">
-                        <div>
-                            {% if place.photos %}
-                                <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" alt="Photo of {{ place.name }}" class="w-full h-52 object-cover rounded-md">
-                            {% else %}
-                                <p>No photo available</p>
-                            {% endif %}
-                        </div>
-                        <h2 class="mb-2 text-lg font-bold tracking-tight text-gray-900"><a href="#">{{ place.name }}</a></h2>
-
-                        <p class="text-xs font-semibold text-white mb-1">
-                            <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
-                        </p>
-
-                        <p class="mb-5 font-light text-base text-gray-500 dark:text-gray-400"></p>
-
-                        <div class="mt-auto">
-                            <div class="flex items-center space-x-4">
-                                <img class="w-7 h-7 rounded-full" src="{{ url_for('static', filename='assets/location.svg') }}" alt="Location icon" />
-                                <span class="font-medium dark:text-white">
-                                    {{ place.location['locality'] }}
+                                {% for place in photos_luzon %}
+                                    <!-- Each slide -->
+                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
+                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
+                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
+                                            alt="Photo of {{ place.name }}">
+                                    </div>
+                                {% endfor %}
+                            
+                            </div>  
+                            <!-- Slider controls -->
+                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50  group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                    </svg>
+                                    <span class="sr-only">Previous</span>
                                 </span>
-                            </div>
+                            </button>
+                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white  group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <span class="sr-only">Next</span>
+                                </span>
+                            </button>
                         </div>
-                    </article>
-                {% endfor %}
-            </div>
+
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Luzon</h2>
+                        <p class="mb-6 font-light text-gray-500 md:text-lg">The largest island group, the political and economic center of the Philippines, home to the nation's capital, <a href="#" class="text-blue-700 underline">Manila</a>. Known for its bustling cities, popular destinations, and diverse culture.</p>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
+                    <div class="md:order-2">
+                        <div id="gallery" class="relative w-full" data-carousel="slide">
+                            <!-- Carousel wrapper -->
+                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
+
+                                {% for place in photos_visayas %}
+                                    <!-- Each slide -->
+                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
+                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
+                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
+                                            alt="Photo of {{ place.name }}">
+                                    </div>
+                                {% endfor %}
+                            
+                            </div>  
+                            <!-- Slider controls -->
+                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                    </svg>
+                                    <span class="sr-only">Previous</span>
+                                </span>
+                            </button>
+                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <span class="sr-only">Next</span>
+                                </span>
+                            </button>
+                        </div>
+
+                    </div>
+                    <div class="mt-4 md:mt-0 order-1 md:order-1">
+                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Visayas</h2>
+                        <p class="mb-6 font-light text-gray-500 md:text-lg">Located in the central part of the archipelago, is famous for its stunning beaches, vibrant festivals, and rich culture heritage. This region includes world-renowned destinations like <a href="#" class="text-blue-700 underline">Boracay</a>  and <a href="#" class="text-blue-700 underline">Cebu</a>, offering a mix of natural beauty and historical significance.</p>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
+                    <div>
+                        <div id="gallery" class="relative w-full" data-carousel="slide">
+                            <!-- Carousel wrapper -->
+                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
+
+                                {% for place in photos_mindanao %}
+                                    <!-- Each slide -->
+                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
+                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
+                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
+                                            alt="Photo of {{ place.name }}">
+                                    </div>
+                                {% endfor %}
+                            
+                            </div>  
+                            <!-- Slider controls -->
+                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                    </svg>
+                                    <span class="sr-only">Previous</span>
+                                </span>
+                            </button>
+                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
+                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <span class="sr-only">Next</span>
+                                </span>
+                            </button>
+                        </div>
+
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Mindanao</h2>
+                        <p class="mb-6 font-light text-gray-500 md:text-lg">The southernmost island group, boasts vast natural resources and a wealth of cultural diversity. It is known for its lush forests, scenic landscapes and its vibrant indigenous communities. Mindanao is a region of rich cultural interactions, where different ethnic groups and traditions converge, making it a unique part of the Philippine identity.</p>
+                    </div>
+                </div>
+            </section>
         </div>
     </section>
 {% endblock %}
