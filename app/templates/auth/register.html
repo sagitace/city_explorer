@@ -35,6 +35,31 @@
                         </div>
 
                         <button type="submit" class="w-full bg-[#E1D7B7] hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center text-[#1E2A5E] hover:bg-[#c6bc98]">Create Account</button>
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                <div class="container mt-3">
+                                {% for category, message in messages %}
+                                    {% if category == 'warning' %}
+                                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'success' %}
+                                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'danger' %}
+                                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
                         <p class="text-sm font-light text-white dark:text-gray-400">
                             Already have an account? <a href="{{url_for('auth.login')}}" class="font-medium text-primary-600 hover:underline">Login Here</a>
                         </p>

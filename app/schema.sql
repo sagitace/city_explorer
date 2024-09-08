@@ -8,6 +8,7 @@ CREATE TABLE user(
     lastname TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    verified TEXT NOT NULL DEFAULT 'false',
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

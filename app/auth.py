@@ -6,6 +6,8 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.db import get_db
 from app.user import index
+from . import *
+from flask_mail import Message
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -27,7 +29,7 @@ def register():
             error = 'Email is required.'
         elif not password:
             error = 'Password is required.'
-                
+        
         if error is None:
             try:
                 db.execute(
@@ -35,12 +37,53 @@ def register():
                     (firstname, lastname, email, generate_password_hash(password)),
                 )
                 db.commit()
+                      
+                token = s.dumps(email, salt='email-confirm')
+                
+                msg = Message(
+                    'Email Verification - City Explorer', 
+                    recipients=[email]
+                )
+                link = url_for('auth.confirm', token=token, _external=True)
+                msg.body = f'Hi {firstname}\nPlease click the link to verify your email: {link}'
+                
+                # Send the email
+                try:
+                    mail.send(msg)  
+                    flash('A verification email has been sent to your email address!', 'info')
+                except Exception as e:
+                    flash(f'Failed to send email. Error: {e}', 'danger')
+                    return redirect(url_for('auth.register'))
+        
             except db.IntegrityError:
-                error = f"User {email} is already registered."
+                error = f"{email} is already registered."
             else:
                 return redirect(url_for("auth.login"))  
-        flash(error)        
+        flash(error, 'danger')        
     return render_template('auth/register.html')
+
+@bp.route('/confirm/<token>')
+def confirm(token):
+    try:
+        # validate
+        email = s.loads(token, salt='email-confirm', max_age=3600)  # Token is valid for 1hr
+    except SignatureExpired:
+        return '<h1>The token is expired!</h1>'
+    
+    user = get_db().execute(
+        'SELECT * FROM user WHERE email = ?', (email,)
+    ).fetchone()
+    
+    if user:
+        get_db().execute(
+            'UPDATE user SET verified = "true" WHERE email = ?', (email,)
+        )
+        get_db().commit()
+    else:
+        return '<h1>Invalid token</h1>'
+    
+    flash('Your email has been verified successfully!', 'success')
+    return redirect(url_for('auth.login'))
 
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
@@ -63,7 +106,7 @@ def login():
             session['user_id'] = user['id']
             return redirect(url_for('user.index'))
         
-        flash(error)
+        flash(error, 'danger')
         
     return render_template('auth/login.html')
 
@@ -88,6 +131,10 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
+        
+        if g.user['verified'] == 'false':  #ensures that the user has verified their email
+            flash('Please verify your email before accessing this page.', 'warning')
+            return redirect(url_for('auth.register'))
         
         return view(**kwargs)
     return wrapped_view

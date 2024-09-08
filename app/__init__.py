@@ -1,7 +1,13 @@
 import os
 
 from flask import Flask, render_template, redirect, url_for, g
+from flask_mail import Mail, Message
+from random import *
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
+mail = Mail()  
+s = URLSafeTimedSerializer('iojksdwyhdnmdsokmd,d/sd/wjwk')
+    
 def create_app():
     # create and configure appp
     app = Flask(__name__, instance_relative_config=True)
@@ -9,8 +15,15 @@ def create_app():
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'app.sqlite'),
     )
-    
-    #
+    app.config["MAIL_SERVER"]='smtp.gmail.com'
+    app.config["MAIL_PORT"]=465
+    app.config["MAIL_USERNAME"]='labiniace.barlas35@gmail.com'
+    app.config["MAIL_PASSWORD"]='xwaqmewcfybtwsst'
+    app.config['MAIL_USE_TLS']=False
+    app.config['MAIL_USE_SSL']=True
+    app.config['MAIL_DEFAULT_SENDER'] = 'labiniace.barlas35@gmail.com'
+    mail.init_app(app)
+
     app.config.from_pyfile('config.py', silent=True)
    
     try:
