@@ -2,7 +2,6 @@ import os
 
 from flask import Flask, render_template, redirect, url_for, g
 from flask_mail import Mail, Message
-from random import *
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 mail = Mail()  
@@ -15,6 +14,8 @@ def create_app():
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'app.sqlite'),
     )
+    
+    #mail configuration
     app.config["MAIL_SERVER"]='smtp.gmail.com'
     app.config["MAIL_PORT"]=465
     app.config["MAIL_USERNAME"]='labiniace.barlas35@gmail.com'
