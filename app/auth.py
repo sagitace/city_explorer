@@ -15,12 +15,28 @@ from app.db import get_db
 from app.user import index
 from . import *
 from flask_mail import Message
+from wtforms import Form, BooleanField, StringField, PasswordField, validators
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
+class RegistrationForm(Form):
+    username = StringField("Username", [validators.Length(min=4, max=25)])
+    email = StringField("Email Address", [validators.Length(min=6, max=35)])
+    password = PasswordField(
+        "New Password",
+        [
+            validators.DataRequired(),
+            validators.EqualTo("confirm", message="Passwords must match"),
+        ],
+    )
+    confirm = PasswordField("Repeat Password")
+    accept_tos = BooleanField("I accept the TOS", [validators.DataRequired()])
+
+
 @bp.route("/register", methods=("POST", "GET"))
 def register():
+    # form = RegistrationForm(request.form)
     if request.method == "POST":
         firstname = request.form["firstname"]
         lastname = request.form["lastname"]

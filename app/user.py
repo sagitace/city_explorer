@@ -243,7 +243,6 @@ def popular():
                 "Tagaytay",
                 "Boracay",
                 "Bohol",
-                "Dumaguete",
                 "Zamboanga",
                 "Camiguin",
                 "Siargao",
@@ -476,7 +475,7 @@ def add_to_liked():
             )
             db.commit()
 
-            return redirect(url_for("user.place_info", fsq_id=fsq_id))
+            return redirect(request.referrer)
 
     return inner()
 
@@ -497,7 +496,7 @@ def remove_to_liked():
             )
             db.commit()
 
-            return redirect(url_for("user.place_info", fsq_id=fsq_id))
+            return redirect(request.referrer)
 
     return inner()
 

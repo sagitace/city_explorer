@@ -3,12 +3,12 @@
 <h1>{% block title %}City Explorer{% endblock %}</h1>
 
 {% block content %}
-    <section>
+    <section class="mb-20">
         <div style="background-image: url('{{ url_for('static', filename='assets/landing.svg') }}');
         background-size: cover; 
         background-position: center; 
         background-repeat: no-repeat;">
-            <div class="container max-w-screen-lg mx-auto sm:pt-10 pt-7 px-3 min-h-[300px] max-lg:px-10 max-sm:px-5">
+            <div class="container max-w-screen-lg mx-auto sm:pt-10 pt-7 px-3 h-5/6 min-h-[350px] max-lg:px-10 max-sm:px-5">
                 <div class="grid grid-cols-2 gap-10">
                     <div class="flex items-center sm:w-[95%] col-span-2 sm:col-span-1">
                         <div>
@@ -28,5 +28,61 @@
             </div>
         </div>
     </section>
-
+    <section class="px-5 sm:px-8">
+        <div class="gap-8 items-center mx-auto max-w-screen-lg xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
+            <div class="h-full">
+                <div class="flex items-center h-56 overflow-hidden rounded-lg md:h-96">
+                    <figure class="relative">
+                        <img src="{{photos_luzon[0].photos[0].prefix}}1920x1440{{photos_luzon[0].photos[0].suffix}}" alt="Luzon" class="rounded-md">
+                        <figcaption class="absolute px-4 text-lg text-white bottom-1">
+                            <p class="text-base">{{photos_luzon[0].details['formatted_address']}}</p>
+                        </figcaption>
+                    </figure>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Luzon</h2>
+                <p class="font-normal text-gray-500 md:text-lg text-base">
+                    The largest island group, the political and economic center of the Philippines, home to the nation's capital, <strong>Manila</strong>. Known for its bustling cities, popular destinations, and diverse culture. Explore the rich heritage of <strong>{{photos_luzon[0].details['locality']}}</strong>, famous for the breathtaking Banaue Rice Terraces, a UNESCO World Heritage Site and a testament to the indigenous agricultural ingenuity.
+                </p>
+            </div>
+        </div>
+    </section>
+    <section class="max-md:mt-10 px-5 sm:px-8">
+        <div class="gap-8 items-center mx-auto max-w-screen-lg xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
+            <div class="flex items-center md:order-2 h-56 overflow-hidden rounded-lg md:h-96">
+                <figure class="relative">
+                    <img src="{{photos_visayas[0].photos[0].prefix}}1920x1440{{photos_visayas[0].photos[0].suffix}}" alt="Luzon" class="rounded-md">
+                    <figcaption class="absolute px-4 text-lg text-white bottom-1">
+                        <p class="text-base">{{photos_visayas[0].details['formatted_address']}}</p>
+                    </figcaption>
+                </figure>
+            </div>
+            <div class="order-1 md:order-1">
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Visayas</h2>
+                <p class="font-normal text-gray-500 md:text-lg text-base">
+                    Located in the central part of the archipelago, it is famous for its stunning beaches, vibrant festivals, and rich cultural heritage. This region includes world-renowned destinations like the majestic <strong>Chocolate Hills in Bohol</strong>, offering a unique natural wonder, and a mix of natural beauty and historical significance.
+                </p>
+            </div>
+        </div>
+    </section>
+    <section class="max-md:mt-10 px-5 sm:px-8">
+        <div class="gap-8 items-center mx-auto max-w-screen-lg xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
+            <div class="flex items-center h-56 overflow-hidden rounded-lg md:h-96">
+                <figure class="relative">
+                    <img src="{{photos_mindanao[0].photos[0].prefix}}1920x1440{{photos_mindanao[0].photos[0].suffix}}" alt="Luzon" class="rounded-md">
+                    <figcaption class="absolute px-4 text-lg text-white bottom-1">
+                        <p class="text-base">{{photos_mindanao[0].details['formatted_address']}}</p>
+                    </figcaption>
+                </figure>
+            </div>
+            <div>
+                <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Mindanao</h2>
+                <p class="font-normal text-gray-500 md:text-lg text-base">
+                    The southernmost island group boasts vast natural resources and a wealth of cultural diversity. It is known for its lush forests, scenic landscapes, and its vibrant indigenous communities. Explore the natural wonders of <strong>{{photos_mindanao[0].details['region']}}</strong>, home to the stunning Siargao Island, known as the surfing capital of the Philippines and a paradise for nature lovers.
+                </p>
+            </div>
+        </div>
+    </section>
 {% endblock %}

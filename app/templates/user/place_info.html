@@ -18,10 +18,10 @@
                             <div>
                                 <img id="mainImage" class="h-auto max-h-[350px] w-full rounded-lg" src="{{ place.photos.0.prefix }}1920x1440{{ place.photos.0.suffix }}" alt="Photo of {{ place.name }}">
                             </div>
-                            <div class="grid grid-cols-{{ place.photos|length }} gap-2">
+                            <div class="grid grid-cols-5 gap-2">
                                 {% for photo in place.photos %}
                                     <div>
-                                        <img class="thumbnail h-auto max-w-full rounded-lg cursor-pointer opacity-75 hover:opacity-100" src="{{ photo.prefix }}1920x1440{{ photo.suffix }}" alt="Photo of {{ place.name }}">
+                                        <img class="thumbnail h-auto max-h-36 max-w-full rounded-lg cursor-pointer opacity-75 hover:opacity-100" src="{{ photo.prefix }}1920x1440{{ photo.suffix }}" alt="Photo of {{ place.name }}">
                                     </div>
                                 {% endfor %}
                             </div>
