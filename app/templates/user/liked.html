@@ -30,19 +30,18 @@
                         <h2 class="mb-2 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
 
                         <div class="flex gap-1 justify-between">
-                            <div>
-                            <p class="flex text-xs font-semibold text-white mb-1">
-                                <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
-                            </p>
-                            {% if place.visited %}
-                            <p class="flex text-xs font-semibold text-white mb-1">
-                                <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
-                            </p>
-                            {% endif %}
+                            <div class="flex gap-1">
+                                <p class="flex text-xs font-semibold text-white mb-1">
+                                    <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
+                                </p>
+                                {% if place.visited %}
+                                <p class="flex text-xs font-semibold text-white mb-1">
+                                    <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
+                                </p>
+                                {% endif %}
                             </div>
                             <div>
 
-                            
                             {% if place.liked %}
                                 <svg class="w-6 h-6 text-red-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
@@ -66,7 +65,7 @@
                         </div>
                     </article>
                     <!-- Main modal -->
-                    <div id="readPlaceModal-{{ place.fsq_id }}" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full bg-black bg-opacity-40">
+                     <div id="readPlaceModal-{{ place.fsq_id }}" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full bg-black bg-opacity-40">
                         <div class="relative p-4 w-full max-w-xl h-full md:h-auto">
                             <!-- Modal content -->
                             <div class="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
@@ -74,18 +73,45 @@
                                     <div class="flex justify-between mb-4 rounded-t sm:mb-5">
                                         <div class="text-lg text-gray-900 md:text-xl dark:text-white">
                                             <h3 class="font-semibold text-gray-900">
-                                                {{place.name}}
+                                                <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}">{{place.name}}</a>
                                             </h3>
-                                            <div class="flex gap-1">
-                                                <p class="font-bold text-base text-gray-800">
-                                                    {{place.categories[0].short_name}} 
-                                                </p>
-                                                {% if place.visited == True %}
-                                                    <p class="flex text-xs font-semibold text-white mb-1">
+                                            <div class="flex mt-2">
+                                                <div class="flex gap-1">
+                                                    <p class="text-xs font-semibold text-white mb-1">
+                                                        <span class="rounded-lg bg-blue-900 px-2 py-1">{{place.categories[0].short_name}}</span>
+                                                    </p>
+                                                    {% if place.visited == True %}
+                                                    <p class="text-xs font-semibold text-white mb-1">
                                                         <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
                                                     </p>
-                                                {% endif %}
-                                            </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ml-4 -mt-2.5">
+                                                    {% if place.liked %}
+                                                        <form action="{{ url_for('user.remove_to_liked') }}" method="POST">
+                                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                            <button type="submit" class="hover:text-gray-500 font-medium rounded-full text-sm p-1.5 text-center inline-flex items-center group text-red-700">
+                                                                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                                                </svg>
+
+                                                                <span class="sr-only">Icon description</span>
+                                                            </button>  
+                                                        </form>
+                                                    {%else%}
+                                                        <form action="{{ url_for('user.add_to_liked') }}" method="POST">
+                                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                            <button type="submit" class="text-gray-500 hover:text-red-700 font-medium rounded-full text-sm p-1.5 text-center inline-flex items-center group ">
+                                                                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                                                </svg>
+
+                                                                <span class="sr-only">Icon description</span>
+                                                            </button>        
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                             </div>
                                             
                                         </div>
                                         <div>
@@ -118,7 +144,7 @@
                                                         <p>{{ comment.text }}</p>
                                                     {% endfor %}
                                                 {% else %}
-                                                    <p>No comments</p>
+                                                    <p>No comment</p>
                                                 {% endif %}
                                                
                                             </dd>
@@ -152,20 +178,22 @@
                                             <p class="text-sm text-gray-100"> {{ place.weather.wind['speed'] }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center space-x-3 sm:space-x-4">
-                                            <button type="button" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 ">
-                                                <svg aria-hidden="true" class="mr-1 -ml-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
-                                                Add to favourites
-                                            </button>
-                                            <form action="{{url_for('user.add_to_visited')}}" method="POST">
-                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                                <button type="submit" class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-blue-700 rounded-lg border hover:bg-gray-800 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200">
-                                                    Add to visited place
-                                                </button>
-                                            </form>               
-                                        </div>              
-                                    </div>
+                                {% if place.visited %}
+                                    <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
+                                        <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                        <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">Remove to visited</button>
+                                    </form>
+                                {% else %}
+                                    <form action="{{ url_for('user.add_to_visited') }}" method="POST">
+                                        <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                        
+                                        <button type="submit" data-modal-target="popup-modal" data-modal-toggle="popup-modal" 
+                                            class="py-2 px-5 text-sm font-semibold text-white bg-indigo-700 rounded-lg shadow-md hover:bg-indigo-800 hover:shadow-lg transition-all duration-300">
+                                            Add to visited
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
                             </div>
                         </div>
                     </div>

@@ -5,6 +5,7 @@ import requests
 import asyncio, aiohttp
 import random  # for default location
 import functools  # for database .fetchone() method
+from datetime import datetime
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -28,29 +29,37 @@ async def get_places_data(city, categories):
 
     params["sort"] = "POPULARITY"
     params["fields"] = "fsq_id,categories,geocodes,location,name"
-    params["limit"] = 9
+    params["limit"] = 3
 
     async with aiohttp.ClientSession() as session:
+        # First, get the weather data for the city
+        weather_url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+        async with session.get(weather_url) as weather_response:
+            if weather_response.status == 200:
+                weather = await weather_response.json()
+            else:
+                weather = {}
+
+        # Now, get the place data
         async with session.get(
             FOURSQUARE_API_URL, headers=headers, params=params
         ) as response:
             if response.status == 200:
-                db = get_db()
-
                 places = await response.json()
                 places = places.get("results", [])
 
+                places_details = []
+
                 for place in places:
+                    place_dict = dict(place)
                     fsq_id = place.get("fsq_id")
-                    lon = place.get("geocodes", {}).get("main", {}).get("longitude")
-                    lat = place.get("geocodes", {}).get("main", {}).get("latitude")
 
                     # Check if the place has been visited by the user
+                    db = get_db()
                     visited_row = db.execute(
                         "SELECT 1 FROM visited WHERE fsq_id = ? AND user_id = ?",
                         (fsq_id, g.user["id"]),
                     ).fetchone()
-
                     place["visited"] = bool(visited_row)
 
                     # Check if the place has been liked by the user
@@ -58,50 +67,45 @@ async def get_places_data(city, categories):
                         "SELECT 1 FROM liked WHERE fsq_id = ? AND user_id = ?",
                         (fsq_id, g.user["id"]),
                     ).fetchone()
-
                     place["liked"] = bool(liked_row)
 
+                    # URLs for API calls
                     photo_url = (
                         FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4"
                     )
-                    weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
                     tips_url = FOURSQUARE_API_TIPS.format(fsq_id=fsq_id) + "?limit=1"
 
+                    # Concurrent async API calls for photos and tips
                     async with session.get(
                         photo_url, headers=headers
                     ) as photo_response, session.get(
-                        weather_url
-                    ) as weather_response, session.get(
                         tips_url, headers=headers
                     ) as tips_response:
 
-                        # photos response
+                        # Process photos
                         if photo_response.status == 200:
                             photos = await photo_response.json()
-                            place["photos"] = photos if photos else []
+                            place_dict["photos"] = photos if photos else []
                         else:
-                            place["photos"] = []
+                            place_dict["photos"] = []
 
-                        # weather response
-                        if weather_response.status == 200:
-                            weather = await weather_response.json()
-                            place["weather"] = weather
-                        else:
-                            place["weather"] = {}
-
-                        # tips response
+                        # Process tips
                         if tips_response.status == 200:
                             tips = await tips_response.json()
-                            place["tips"] = tips if tips else {}
+                            place_dict["tips"] = tips if tips else {}
                         else:
-                            place["tips"] = {}
+                            place_dict["tips"] = {}
 
-                return places
+                    # Add city weather to the place details
+                    place_dict["weather"] = weather
+                    places_details.append(place_dict)
+
+                return places_details
             else:
-                return None  # if api call fails
+                return None  # if API call fails
 
 
-def get_photos_data(locations):
+async def get_photos_data(locations):
     headers = {"accept": "application/json", "Authorization": FOURSQUARE_API_KEY}
 
     places_with_photos = []
@@ -114,37 +118,65 @@ def get_photos_data(locations):
             "categories": "19000,16000",
         }
 
-        response = requests.get(FOURSQUARE_API_URL, headers=headers, params=params)
-        if response.status_code == 200:
-            places = response.json().get("results", [])
-            for place in places:
-                fsq_id = place.get("fsq_id")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                FOURSQUARE_API_URL, headers=headers, params=params
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    places = data.get("results", [])
+                    for place in places:
+                        fsq_id = place.get("fsq_id")
 
-                # Get Photos
-                photo_response = requests.get(
-                    FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=1",
-                    headers=headers,
-                )
-                if photo_response.status_code == 200:
-                    photos = photo_response.json()  # return a list
-                    place["photos"] = (
-                        photos if photos else []
-                    )  # Add the list of photos if it exists
+                        photo_url = (
+                            FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4"
+                        )
+
+                        async with session.get(
+                            photo_url, headers=headers
+                        ) as photo_response:
+                            if photo_response.status == 200:
+                                photos = await photo_response.json()
+                                place["photos"] = photos if photos else []
+                            else:
+                                place["photos"] = []
+
+                        places_with_photos.append(place)
                 else:
-                    place["photos"] = []
-
-                # lat = place.get('geocodes', {}).get('main', {}).get('latitude')
-                # lon = place.get('geocodes', {}).get('main', {}).get('longitude')
-                # weather_response = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
-                # if weather_response.status_code == 200:
-                #     place['weather'] = weather_response.json()
-                # else:
-                #     place['weather'] = {}
-
-                places_with_photos.append(place)
-        else:
-            continue  # If API call fails, skip this location
+                    continue
     return places_with_photos
+
+    #     response = requests.get(FOURSQUARE_API_URL, headers=headers, params=params)
+    #     if response.status_code == 200:
+    #         places = response.json().get("results", [])
+    #         for place in places:
+    #             fsq_id = place.get("fsq_id")
+
+    #             # Get Photos
+    #             photo_response = requests.get(
+    #                 FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=1",
+    #                 headers=headers,
+    #             )
+    #             if photo_response.status_code == 200:
+    #                 photos = photo_response.json()  # return a list
+    #                 place["photos"] = (
+    #                     photos if photos else []
+    #                 )  # Add the list of photos if it exists
+    #             else:
+    #                 place["photos"] = []
+
+    #             # lat = place.get('geocodes', {}).get('main', {}).get('latitude')
+    #             # lon = place.get('geocodes', {}).get('main', {}).get('longitude')
+    #             # weather_response = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
+    #             # if weather_response.status_code == 200:
+    #             #     place['weather'] = weather_response.json()
+    #             # else:
+    #             #     place['weather'] = {}
+
+    #             places_with_photos.append(place)
+    #     else:
+    #         continue  # If API call fails, skip this location
+    # return places_with_photos
 
 
 @bp.route("/", methods=("GET", "POST"))
@@ -152,7 +184,7 @@ def index():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
 
         luzon = [
             "baguio, Ph",
@@ -170,9 +202,9 @@ def index():
         ]
         mindanao = ["Davao, Ph", "Camiguin, Ph", "Siargao, Ph", "Zamboanga, Ph"]
 
-        photos_luzon = get_photos_data(luzon)
-        photos_visayas = get_photos_data(visayas)
-        photos_mindanao = get_photos_data(mindanao)
+        photos_luzon = await get_photos_data(luzon)
+        photos_visayas = await get_photos_data(visayas)
+        photos_mindanao = await get_photos_data(mindanao)
 
         return render_template(
             "user/index.html",
@@ -182,7 +214,7 @@ def index():
         )
         # return render_template('user/index.html')
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/popular", methods=("GET", "POST"))
@@ -204,16 +236,13 @@ def popular():
                 return "Error: Failed to fetch places data."
         else:
             location_list = [
-                "Maketi",
                 "Makati",
                 "Cebu",
                 "Davao",
                 "Batangas",
                 "Tagaytay",
                 "Boracay",
-                "Cebu",
                 "Bohol",
-                "Iloilo",
                 "Dumaguete",
                 "Zamboanga",
                 "Camiguin",
@@ -225,7 +254,7 @@ def popular():
             categories = "12000,19000,16000,17000,10000,13000"
             city = random.choice(location_list)
             places = await get_places_data(city, categories)
-
+            print(city)
             if places:
                 return render_template(
                     "user/popular.html", places=places, city=city, categories=categories
@@ -247,6 +276,7 @@ def place_info(fsq_id):
             return render_template("user/place_info.html", place=place)
         else:
             return "Error: Failed to fetch place data."
+
         return render_template("user/place_info.html")
 
     return asyncio.run(inner())
@@ -292,7 +322,7 @@ async def get_place_data(fsq_id):
                 if lat and lon:
                     # Fetch photos
                     async with session.get(
-                        FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4",
+                        FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=5",
                         headers=headers,
                     ) as photo_response:
                         if photo_response.status == 200:
@@ -311,29 +341,46 @@ async def get_place_data(fsq_id):
                         else:
                             place_details["weather"] = {}
 
-                    # Fetch tips
                     tip_params = {
                         "fields": "text,agree_count,disagree_count,created_at"
                     }
                     async with session.get(
-                        FOURSQUARE_API_TIPS.format(fsq_id=fsq_id),
+                        FOURSQUARE_API_TIPS.format(fsq_id=fsq_id) + "?limit=5",
                         headers=headers,
                         params=tip_params,
                     ) as tips_response:
                         if tips_response.status == 200:
                             tips = await tips_response.json()
-                            place_details["tips"] = tips if tips else {}
-                            place_details["tips_count"] = len(tips)
-                        else:
-                            place_details["tips"] = {}
 
+                            formatted_tips = []
+                            for tip in tips:
+                                created_at = tip.get("created_at")
+                                if created_at:
+                                    # Parse ISO date string
+                                    created_at_obj = datetime.strptime(
+                                        created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                                    )
+                                    # Format the date (e.g., "June 14, 2018")
+                                    tip["created_at"] = created_at_obj.strftime(
+                                        "%B %d, %Y"
+                                    )
+
+                                formatted_tips.append(tip)
+
+                            place_details["tips"] = (
+                                formatted_tips if formatted_tips else []
+                            )
+                            place_details["tips_count"] = len(formatted_tips)
+                        else:
+                            place_details["tips"] = []
                 else:
-                    # Handle the case where lat/lon is missing
                     place_details["photos"] = []
                     place_details["weather"] = {}
                     place_details["tips"] = {}
 
                 related_places = details.get("related_places", {}).get("children", [])
+
+                items = 0
                 for related_place in related_places:
                     # Fetch photos for each related place
                     async with session.get(
@@ -341,11 +388,15 @@ async def get_place_data(fsq_id):
                         + "?limit=1",
                         headers=headers,
                     ) as photo_response:
+                        # check if there is a photo
                         if photo_response.status == 200:
                             photos = await photo_response.json()
-                            related_place["photos"] = photos if photos else []
-                        else:
-                            related_place["photos"] = []
+                            if photos:
+                                related_place["photos"] = photos
+                                items = items + 1
+
+                    if items == 12:
+                        break
 
                 # Return the place details including related places
                 place_details["related_places_photos"] = related_places
@@ -384,6 +435,27 @@ def add_to_visited():
                     return redirect(url_for("user.place_info", fsq_id=fsq_id))
             flash(error, "danger")
         return redirect(url_for("user.place_info", fsq_id=fsq_id))
+
+    return inner()
+
+
+@bp.route("/remove_visited", methods=["POST"])
+def remove_to_visited():
+    from app.auth import login_required
+
+    @login_required
+    def inner():
+        if request.method == "POST":
+            fsq_id = request.form["place_id"]
+
+            db = get_db()
+            db.execute(
+                "DELETE FROM visited WHERE fsq_id = ? AND user_id = ?",
+                (fsq_id, g.user["id"]),
+            )
+            db.commit()
+
+            return redirect(request.referrer)
 
     return inner()
 
@@ -529,7 +601,7 @@ def visited():
     return inner()
 
 
-@bp.route("/liked", methods=("GET", "POST"))
+@bp.route("/likes", methods=("GET", "POST"))
 def liked():
     from app.auth import login_required
 

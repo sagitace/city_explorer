@@ -11,6 +11,19 @@
         <h2 class="text-3xl font-bold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
             Visited Places
         </h2>
+        
+        <form class="max-w-md mx-auto">   
+            <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                    </svg>
+                </div>
+                <input type="search" id="default-search" class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 " placeholder="Search for cities" required />
+                <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-indigo-700 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2">Search</button>
+            </div>
+        </form>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {% if places %}
@@ -29,14 +42,27 @@
                         </div>
                         <h2 class="mb-2 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
 
-                        <div class="flex gap-1">
-                            <p class="flex text-xs font-semibold text-white mb-1">
-                                <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
-                            </p>
-                            
-                            <p class="flex text-xs font-semibold text-white mb-1">
-                                <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
-                            </p>
+                        <div class="flex gap-1 justify-between">
+                            <div class="flex gap-2">
+                                <p class="flex text-xs font-semibold text-white mb-1">
+                                    <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
+                                </p>
+                                {% if place.visited %}
+                                <p class="flex text-xs font-semibold text-white mb-1">
+                                    <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div>
+
+                            {% if place.liked %}
+                                <svg class="w-6 h-6 text-red-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                </svg>
+
+                                <span class="sr-only">Icon description</span>
+                            {% endif %}
+                            </div>
                             
                         </div>
                 
@@ -60,18 +86,45 @@
                                     <div class="flex justify-between mb-4 rounded-t sm:mb-5">
                                         <div class="text-lg text-gray-900 md:text-xl dark:text-white">
                                             <h3 class="font-semibold text-gray-900">
-                                                {{place.name}}
+                                                <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}">{{place.name}}</a>
                                             </h3>
-                                            <div class="flex gap-1">
-                                                <p class="font-bold text-base text-gray-800">
-                                                    {{place.categories[0].short_name}} 
-                                                </p>
-                                                {% if place.visited == True %}
-                                                    <p class="flex text-xs font-semibold text-white mb-1">
+                                            <div class="flex mt-2">
+                                                <div class="flex gap-1">
+                                                    <p class="text-xs font-semibold text-white mb-1">
+                                                        <span class="rounded-lg bg-blue-900 px-2 py-1">{{place.categories[0].short_name}}</span>
+                                                    </p>
+                                                    {% if place.visited == True %}
+                                                    <p class="text-xs font-semibold text-white mb-1">
                                                         <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
                                                     </p>
-                                                {% endif %}
-                                            </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ml-4 -mt-2.5">
+                                                    {% if place.liked %}
+                                                        <form action="{{ url_for('user.remove_to_liked') }}" method="POST">
+                                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                            <button type="submit" class="hover:text-gray-500 font-medium rounded-full text-sm p-1.5 text-center inline-flex items-center group text-red-700">
+                                                                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                                                </svg>
+
+                                                                <span class="sr-only">Icon description</span>
+                                                            </button>  
+                                                        </form>
+                                                    {%else%}
+                                                        <form action="{{ url_for('user.add_to_liked') }}" method="POST">
+                                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                            <button type="submit" class="text-gray-500 hover:text-red-700 font-medium rounded-full text-sm p-1.5 text-center inline-flex items-center group ">
+                                                                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                                                </svg>
+
+                                                                <span class="sr-only">Icon description</span>
+                                                            </button>        
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                             </div>
                                             
                                         </div>
                                         <div>
@@ -104,7 +157,7 @@
                                                         <p>{{ comment.text }}</p>
                                                     {% endfor %}
                                                 {% else %}
-                                                    <p>No comments</p>
+                                                    <p>No comment</p>
                                                 {% endif %}
                                                
                                             </dd>
@@ -138,20 +191,10 @@
                                             <p class="text-sm text-gray-100"> {{ place.weather.wind['speed'] }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center space-x-3 sm:space-x-4">
-                                            <button type="button" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 ">
-                                                <svg aria-hidden="true" class="mr-1 -ml-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
-                                                Add to favourites
-                                            </button>
-                                            <form action="{{url_for('user.add_to_visited')}}" method="POST">
-                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                                <button type="submit" class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-blue-700 rounded-lg border hover:bg-gray-800 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200">
-                                                    Add to visited place
-                                                </button>
-                                            </form>               
-                                        </div>              
-                                    </div>
+                                <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
+                                    <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                    <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">Remove to visited</button>
+                                </form>
                             </div>
                         </div>
                     </div>
