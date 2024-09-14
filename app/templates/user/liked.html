@@ -18,7 +18,9 @@
                     <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md flex flex-col h-auto cursor-pointer" id="readPlaceButton-{{ place.fsq_id }}" data-modal-target="readPlaceModal-{{ place.fsq_id }}" data-modal-toggle="readPlaceModal-{{ place.fsq_id }}">
                         <div>
                             {% if place.photos %}
-                                <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" alt="Photo of {{ place.name }}" class="w-full h-52 object-cover rounded-md">
+                                <div class="w-full h-52 overflow-hidden rounded-md">
+                                    <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" alt="Photo of {{ place.name }}" class="w-full h-52 object-cover rounded-md hover:scale-110 transition-all ease-in-out duration-300">
+                                </div>
                             {% else %}
                                 <div class="flex items-center justify-center w-full h-52 bg-gray-400 rounded-md ">
                                 <svg class="w-10 h-10 text-gray-200 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
@@ -121,12 +123,11 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="grid gap-6 grid-cols-2 md:grid-cols-4">
+                                    <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
                                         {% if place.photos %}
                                             {% for photo in place.photos %}
                                                 <img src="{{ photo.prefix }}1920x1440{{ photo.suffix }}" alt="Photo of {{ place.name }}" class="w-full h-22 object-cover rounded-md">
                                             {% endfor %}
-                                            
                                         {% else %}
                                             <div class="flex items-center justify-center w-full h-52 bg-gray-400 rounded-md ">
                                             <svg class="w-10 h-10 text-gray-200 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
@@ -137,19 +138,8 @@
                                     </div>
                                     <div class="mt-4">
                                         <dl>
-                                            <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">Place Comment</dt>
-                                            <dd class="mb-4 font-light text-gray-500 sm:mb-5 dark:text-gray-400 italic">
-                                                {% if place.tips %}
-                                                    {% for comment in place.tips %}
-                                                        <p>{{ comment.text }}</p>
-                                                    {% endfor %}
-                                                {% else %}
-                                                    <p>No comment</p>
-                                                {% endif %}
-                                               
-                                            </dd>
                                             <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">Address</dt>
-                                            <dd class="mb-2 font-light text-gray-500 sm:mb-5 dark:text-gray-400">{{ place.location['formatted_address']}}</dd>
+                                            <dd class="mb-2 font-normal text-gray-600 sm:mb-5 dark:text-gray-400">{{ place.location['formatted_address']}}</dd>
                                         </dl>
                                     </div>
                                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
@@ -178,22 +168,24 @@
                                             <p class="text-sm text-gray-100"> {{ place.weather.wind['speed'] }}</p>
                                         </div>
                                     </div>
-                                {% if place.visited %}
-                                    <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
-                                        <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                        <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">Remove to visited</button>
-                                    </form>
-                                {% else %}
-                                    <form action="{{ url_for('user.add_to_visited') }}" method="POST">
-                                        <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                        
-                                        <button type="submit" data-modal-target="popup-modal" data-modal-toggle="popup-modal" 
-                                            class="py-2 px-5 text-sm font-semibold text-white bg-indigo-700 rounded-lg shadow-md hover:bg-indigo-800 hover:shadow-lg transition-all duration-300">
-                                            Add to visited
-                                        </button>
-                                    </form>
-                                {% endif %}
-                                
+                                    <div class="mb-2 flex gap-2">
+                                        <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" target="_blank"><button class="text-white bg-indigo-600 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center ">More Details</button></a>
+                                        {% if place.visited %}
+                                            <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
+                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">Remove to visited</button>
+                                            </form>
+                                        {% else %}
+                                            <form action="{{ url_for('user.add_to_visited') }}" method="POST">
+                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                                
+                                                <button type="submit" data-modal-target="popup-modal" data-modal-toggle="popup-modal" 
+                                                    class="py-2 px-5 text-sm font-semibold text-white bg-indigo-700 rounded-lg shadow-md hover:bg-indigo-800 hover:shadow-lg transition-all duration-300">
+                                                    Add to visited
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -202,7 +194,8 @@
                 <p class="text-gray-800 mt-16 text-center text-2xl">No visited places</p>
             {% endif %}
         </div>
-          <div class="flex flex-col items-end mt-2">
+        {% if total_entries > items_per_page %}
+        <div class="flex flex-col items-end mt-2">
             <span class="text-sm text-gray-700 dark:text-gray-400">
                 Showing 
                 <span class="font-semibold text-gray-900 dark:text-white">{{ items_start }}</span> 
@@ -234,5 +227,7 @@
                     </button>
                 </a>
             </div>
+        </div>
+        {% endif %}
     </section>
 {% endblock %}

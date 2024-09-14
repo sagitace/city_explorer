@@ -34,8 +34,11 @@ CREATE TABLE liked(
 CREATE TABLE plans(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
-    fsq_id TEXT UNIQUE NOT NULL,
+    fsq_id TEXT NOT NULL,
+    place_name TEXT NOT NULL,
     date TEXT NOT NULL,
+    notes TEXT,
+    visited TEXT NOT NULL DEFAULT 'false',
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user (id)
 )

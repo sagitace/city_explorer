@@ -1,11 +1,22 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    url_for,
+    current_app,
+)
 from werkzeug.exceptions import abort
 from app.db import get_db, close_db
 import requests
-import asyncio, aiohttp
+import asyncio, aiohttp, json, os
 import random  # for default location
 import functools  # for database .fetchone() method
 from datetime import datetime
+from flask_mail import Message
+from . import *
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -29,7 +40,7 @@ async def get_places_data(city, categories):
 
     params["sort"] = "POPULARITY"
     params["fields"] = "fsq_id,categories,geocodes,location,name"
-    params["limit"] = 6
+    params["limit"] = 3
 
     async with aiohttp.ClientSession() as session:
         # First, get the weather data for the city
@@ -38,7 +49,30 @@ async def get_places_data(city, categories):
             if weather_response.status == 200:
                 weather = await weather_response.json()
             else:
-                weather = {}
+                # another location around the city
+                own_params = {
+                    "near": city + ", Ph",
+                    "limit": 1,
+                    "sort": "POPULARITY",
+                    "fields": "geocodes",
+                }
+                async with session.get(
+                    FOURSQUARE_API_URL,
+                    headers=headers,
+                    params=own_params,
+                ) as response:
+                    if response.status == 200:
+                        get_place = await response.json()
+                        get_place = get_place.get("results", [])
+                        if get_place[0]["geocodes"]["main"]:
+                            new_weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={get_place[0]['geocodes']['main']['latitude']}&lon={get_place[0]['geocodes']['main']['longitude']}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+                            async with session.get(new_weather_url) as weather_response:
+                                if weather_response.status == 200:
+                                    weather = await weather_response.json()
+                                else:
+                                    weather = None
+                        else:
+                            weather = None
 
         # Now, get the place data
         async with session.get(
@@ -122,16 +156,35 @@ def index():
             (g.user["id"],),
         ).fetchall()
 
-        close_db()
-
         city = g.user["province"]
         categories = "12000,19000,16000,17000,10000,13000"
         places = await get_places_data(city, categories)
+        myvisited = await get_visited_places_data(visited)
 
-        myvisited = get_visited_places_data(visited)
         unvisited_places = [place for place in places if not place["visited"]]
         unvisited_places = unvisited_places[:3]
 
+        today = datetime.now().strftime("%b %d, %Y")
+
+        schedules = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? ORDER BY created DESC",
+            (g.user["id"],),
+        ).fetchall()
+
+        # Convert schedules from sqlite3.Row to dictionaries and limit to 2 schedules
+        schedules = [dict(schedule) for schedule in schedules[:2]]
+
+        # Format the date in each schedule
+        for schedule in schedules:
+            if "date" in schedule and schedule["date"]:
+                try:
+                    date_obj = datetime.strptime(schedule["date"], "%Y-%m-%d")
+                    schedule["date"] = date_obj.strftime("%b %d, %Y")
+                except ValueError:
+                    # Handle the case where the date format is not as expected
+                    schedule["date"] = "Invalid Date"
+
+        close_db()
         if places:
             return render_template(
                 "user/index.html",
@@ -141,6 +194,8 @@ def index():
                 likes=likes,
                 myvisited=myvisited,
                 unvisited_places=unvisited_places,
+                schedules=schedules,
+                today=today,
             )
         else:
             return "Error: Failed to fetch places data."
@@ -193,9 +248,18 @@ def place_info(fsq_id):
     async def inner():
         place = await get_place_data(fsq_id)
         todaydate = datetime.now().strftime("%Y-%m-%d")
+        db = get_db()
+        get_plans = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? AND fsq_id = ?",
+            (g.user["id"], fsq_id),
+        ).fetchone()
+
         if place:
             return render_template(
-                "user/place_info.html", place=place, todaydate=todaydate
+                "user/place_info.html",
+                place=place,
+                todaydate=todaydate,
+                plans=get_plans,
             )
         else:
             return "Error: Failed to fetch place data."
@@ -336,7 +400,7 @@ def add_to_visited():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             fsq_id = request.form["place_id"]
             error = None
@@ -359,7 +423,7 @@ def add_to_visited():
             flash(error, "danger")
         return redirect(url_for("user.place_info", fsq_id=fsq_id))
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/remove_visited", methods=["POST"])
@@ -367,7 +431,7 @@ def remove_to_visited():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             fsq_id = request.form["place_id"]
 
@@ -380,7 +444,7 @@ def remove_to_visited():
 
             return redirect(request.referrer)
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/add_liked", methods=("GET", "POST"))
@@ -388,7 +452,7 @@ def add_to_liked():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             fsq_id = request.form["place_id"]
 
@@ -401,7 +465,7 @@ def add_to_liked():
 
             return redirect(request.referrer)
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/remove_liked", methods=("GET", "POST"))
@@ -409,7 +473,7 @@ def remove_to_liked():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             fsq_id = request.form["place_id"]
 
@@ -422,27 +486,42 @@ def remove_to_liked():
 
             return redirect(request.referrer)
 
-    return inner()
+    return asyncio.run(inner())
 
 
-def get_visited_places_data(fsq_id):
+async def get_visited_places_data(fsq_id):
     headers = {"accept": "application/json", "Authorization": FOURSQUARE_API_KEY}
     params = {"fields": "fsq_id,categories,geocodes,location,name"}
     db = get_db()
     places_details = []  # store the details of each place
 
-    for place in fsq_id:
-        place_dict = dict(place)  # Convert place to a dictionary
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for place in fsq_id:
+            place_dict = dict(place)  # Convert place to a dictionary
+            fsq_id = place_dict["fsq_id"]
 
-        fsq_id = place_dict["fsq_id"]
-        details_response = requests.get(
-            FOURSQUARE_API_DETAILS.format(fsq_id=fsq_id), params=params, headers=headers
-        )
+            details_url = FOURSQUARE_API_DETAILS.format(fsq_id=fsq_id)
+            tasks.append(
+                fetch_place_details(
+                    session, details_url, params, headers, place_dict, db
+                )
+            )
 
-        if details_response.status_code == 200:
+        places_details = await asyncio.gather(*tasks)
 
-            details = details_response.json()
+    return places_details
+
+
+async def fetch_place_details(session, details_url, params, headers, place_dict, db):
+    async with session.get(
+        details_url, params=params, headers=headers
+    ) as details_response:
+        if details_response.status == 200:
+            details = await details_response.json()
             place_dict.update(details)  # Update the place_dict with details fetched
+
+            fsq_id = place_dict["fsq_id"]
 
             # Check if the place has been visited by the user
             visited_row = db.execute(
@@ -464,44 +543,40 @@ def get_visited_places_data(fsq_id):
             lon = place_dict.get("geocodes", {}).get("main", {}).get("longitude")
 
             if lat and lon:
+                photo_url = FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4"
+                weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+                tips_url = FOURSQUARE_API_TIPS.format(fsq_id=fsq_id) + "?limit=1"
+
                 # Fetch photos
-                photo_response = requests.get(
-                    FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4",
-                    headers=headers,
+                photo_task = session.get(photo_url, headers=headers)
+                weather_task = session.get(weather_url)
+                tips_task = session.get(tips_url, headers=headers)
+
+                photos_response, weather_response, tips_response = await asyncio.gather(
+                    photo_task, weather_task, tips_task
                 )
-                if photo_response.status_code == 200:
-                    photos = photo_response.json()
+
+                if photos_response.status == 200:
+                    photos = await photos_response.json()
                     place_dict["photos"] = photos if photos else []
                 else:
                     place_dict["photos"] = []
 
-                # Fetch weather
-                weather_response = requests.get(
-                    f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
-                )
-                if weather_response.status_code == 200:
-                    weather = weather_response.json()
+                if weather_response.status == 200:
+                    weather = await weather_response.json()
                     place_dict["weather"] = weather
                 else:
                     place_dict["weather"] = {}
 
-                # Fetch tips
-                tips_response = requests.get(
-                    FOURSQUARE_API_TIPS.format(fsq_id=fsq_id) + "?limit=1",
-                    headers=headers,
-                )
-                if tips_response.status_code == 200:
-                    tips = tips_response.json()
+                if tips_response.status == 200:
+                    tips = await tips_response.json()
                     place_dict["tips"] = tips
                 else:
                     place_dict["tips"] = {}
 
-            # Add the place with all the details to the places_details list
-            places_details.append(place_dict)
+            return place_dict
         else:
-            places_details.append(None)
-
-    return places_details
+            return None
 
 
 @bp.route("/visited", methods=("GET", "POST"))
@@ -509,7 +584,7 @@ def visited():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         db = get_db()
 
         items_per_page = 3
@@ -526,7 +601,7 @@ def visited():
         ).fetchone()[0]
 
         total_pages = (total_visited + items_per_page - 1) // items_per_page
-        places = get_visited_places_data(visited)
+        places = await get_visited_places_data(visited)
 
         # Calculate items start and end for the current page
         items_start = offset + 1
@@ -540,9 +615,10 @@ def visited():
             total_entries=total_visited,
             items_start=items_start,
             items_end=items_end,
+            items_per_page=items_per_page,
         )
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/likes", methods=("GET", "POST"))
@@ -550,9 +626,8 @@ def liked():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         db = get_db()
-        # get all the visited fsq_id in the database table
 
         items_per_page = 3
         page = request.args.get("page", 1, type=int)
@@ -568,7 +643,7 @@ def liked():
         ).fetchone()[0]
 
         total_pages = (total_likes + items_per_page - 1) // items_per_page
-        places = get_visited_places_data(liked)
+        places = await get_visited_places_data(liked)
 
         # Calculate items start and end for the current page
         items_start = offset + 1
@@ -582,9 +657,10 @@ def liked():
             total_entries=total_likes,
             items_start=items_start,
             items_end=items_end,
+            items_per_page=items_per_page,
         )
 
-    return inner()
+    return asyncio.run(inner())
 
 
 @bp.route("/profile", methods=("GET", "POST"))
@@ -592,11 +668,13 @@ def profile():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             firstname = request.form["firstname"]
             lastname = request.form["lastname"]
             email = request.form["email"]
+            province = request.form["province"]
+
             error = None
 
             if not firstname:
@@ -605,22 +683,43 @@ def profile():
                 error = "Last name is required."
             elif not email:
                 error = "Email is required."
+            elif not province:
+                error = "Province is required."
 
             if error is None:
                 db = get_db()
                 db.execute(
-                    "UPDATE user SET firstname = ?, lastname = ?, email = ?"
+                    "UPDATE user SET firstname = ?, lastname = ?, province = ?, email = ?"
                     " WHERE id = ?",
-                    (firstname, lastname, email, g.user["id"]),
+                    (firstname, lastname, province, email, g.user["id"]),
                 )
                 db.commit()
                 return redirect(url_for("user.profile"))
 
             flash(error)
             return render_template("user/profile.html", user=g.user)
-        return render_template("user/profile.html")
+        try:
+            json_file_path = os.path.join(
+                current_app.static_folder,
+                "philippine_provinces_cities_municipalities_and_barangays_2019v2.json",
+            )
+            with open(json_file_path) as myjsonfile:
+                mydata = json.load(myjsonfile)
+        except FileNotFoundError:
+            flash("Data file not found.", "danger")
+            mydata = []
+        provinces = set()
+        for region_key, region_value in mydata.items():
+            if "province_list" in region_value:
+                for province_key in region_value["province_list"].keys():
+                    provinces.add(province_key)
 
-    return inner()
+        # Convert the set to a sorted list
+        provinces_list = sorted(list(provinces))
+
+        return render_template("user/profile.html", data=provinces_list)
+
+    return asyncio.run(inner())
 
 
 @bp.route("/update/character", methods=("GET", "POST"))
@@ -628,7 +727,7 @@ def update_character():
     from app.auth import login_required
 
     @login_required
-    def inner():
+    async def inner():
         if request.method == "POST":
             character = request.form["character"]
             error = None
@@ -648,4 +747,41 @@ def update_character():
             return render_template("user/profile.html", user=g.user)
         return render_template("user/profile.html")
 
-    return inner()
+    return asyncio.run(inner())
+
+
+@bp.route("/add_plans", methods=("GET", "POST"))
+def add_to_plans():
+    from app.auth import login_required
+
+    @login_required
+    async def inner():
+        if request.method == "POST":
+            fsq_id = request.form["fsq_id"]
+            place_name = request.form["place_name"]
+            date = request.form["visit-date"]
+            notes = request.form["notes"]
+
+            db = get_db()
+            db.execute(
+                "INSERT INTO plans (user_id, fsq_id, place_name, date, notes) VALUES (?, ?, ?, ?, ?)",
+                (g.user["id"], fsq_id, place_name, date, notes),
+            )
+            db.commit()
+
+            # format date
+            date = datetime.strptime(date, "%Y-%m-%d").strftime("%B %d, %Y")
+
+            # send mail
+            msg = Message(
+                subject="Your Visit Has Been Scheduled - City Explorer",
+                recipients=[g.user["email"]],
+            )
+            link = url_for("user.index", _external=True)
+            msg.body = f"Hi {g.user['firstname']},\n\nYour visit at {{place_name}} has been successfully scheduled for {date} with City Explorer! To view the details and explore more, simply visit the following link: {link}.\n\nThank you for choosing City Explorer, and we hope you have an amazing experience discovering new places!\n\nBest regards,\nCity Explorer Team"
+
+            mail.send(msg)
+
+            return redirect(request.referrer)
+
+    return asyncio.run(inner())
