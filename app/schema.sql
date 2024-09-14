@@ -1,11 +1,14 @@
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS visited;
+DROP TABLE IF EXISTS liked;
+DROP TABLE IF EXISTS plans;
 
 CREATE TABLE user(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     character TEXT DEFAULT 'character1.svg',
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
+    province TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     verified TEXT NOT NULL DEFAULT 'false',
@@ -27,3 +30,12 @@ CREATE TABLE liked(
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user (id)
 );
+
+CREATE TABLE plans(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    fsq_id TEXT UNIQUE NOT NULL,
+    date TEXT NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user (id)
+)

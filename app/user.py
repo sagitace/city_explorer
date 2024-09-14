@@ -1,6 +1,6 @@
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
-from app.db import get_db
+from app.db import get_db, close_db
 import requests
 import asyncio, aiohttp
 import random  # for default location
@@ -29,7 +29,7 @@ async def get_places_data(city, categories):
 
     params["sort"] = "POPULARITY"
     params["fields"] = "fsq_id,categories,geocodes,location,name"
-    params["limit"] = 3
+    params["limit"] = 6
 
     async with aiohttp.ClientSession() as session:
         # First, get the weather data for the city
@@ -60,14 +60,14 @@ async def get_places_data(city, categories):
                         "SELECT 1 FROM visited WHERE fsq_id = ? AND user_id = ?",
                         (fsq_id, g.user["id"]),
                     ).fetchone()
-                    place["visited"] = bool(visited_row)
+                    place_dict["visited"] = bool(visited_row)
 
                     # Check if the place has been liked by the user
                     liked_row = db.execute(
                         "SELECT 1 FROM liked WHERE fsq_id = ? AND user_id = ?",
                         (fsq_id, g.user["id"]),
                     ).fetchone()
-                    place["liked"] = bool(liked_row)
+                    place_dict["liked"] = bool(liked_row)
 
                     # URLs for API calls
                     photo_url = (
@@ -105,113 +105,45 @@ async def get_places_data(city, categories):
                 return None  # if API call fails
 
 
-async def get_photos_data(locations):
-    headers = {"accept": "application/json", "Authorization": FOURSQUARE_API_KEY}
-
-    places_with_photos = []
-    for location in locations:
-        params = {
-            "fields": "fsq_id",
-            "near": location,
-            "sort": "POPULARITY",
-            "limit": 1,
-            "categories": "19000,16000",
-        }
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                FOURSQUARE_API_URL, headers=headers, params=params
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    places = data.get("results", [])
-                    for place in places:
-                        fsq_id = place.get("fsq_id")
-
-                        photo_url = (
-                            FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=4"
-                        )
-
-                        async with session.get(
-                            photo_url, headers=headers
-                        ) as photo_response:
-                            if photo_response.status == 200:
-                                photos = await photo_response.json()
-                                place["photos"] = photos if photos else []
-                            else:
-                                place["photos"] = []
-
-                        places_with_photos.append(place)
-                else:
-                    continue
-    return places_with_photos
-
-    #     response = requests.get(FOURSQUARE_API_URL, headers=headers, params=params)
-    #     if response.status_code == 200:
-    #         places = response.json().get("results", [])
-    #         for place in places:
-    #             fsq_id = place.get("fsq_id")
-
-    #             # Get Photos
-    #             photo_response = requests.get(
-    #                 FOURSQUARE_API_PHOTOS_URL.format(fsq_id=fsq_id) + "?limit=1",
-    #                 headers=headers,
-    #             )
-    #             if photo_response.status_code == 200:
-    #                 photos = photo_response.json()  # return a list
-    #                 place["photos"] = (
-    #                     photos if photos else []
-    #                 )  # Add the list of photos if it exists
-    #             else:
-    #                 place["photos"] = []
-
-    #             # lat = place.get('geocodes', {}).get('main', {}).get('latitude')
-    #             # lon = place.get('geocodes', {}).get('main', {}).get('longitude')
-    #             # weather_response = requests.get(f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
-    #             # if weather_response.status_code == 200:
-    #             #     place['weather'] = weather_response.json()
-    #             # else:
-    #             #     place['weather'] = {}
-
-    #             places_with_photos.append(place)
-    #     else:
-    #         continue  # If API call fails, skip this location
-    # return places_with_photos
-
-
 @bp.route("/", methods=("GET", "POST"))
 def index():
     from app.auth import login_required
 
     @login_required
     async def inner():
+        db = get_db()
 
-        luzon = [
-            "baguio, Ph",
-            "batangas, Ph",
-            "tagaytay, ph",
-            "makati, ph",
-            "ifugao, ph",
-        ]
-        visayas = [
-            "Boracay, Ph",
-            "Cebu, Ph",
-            "Bohol, Ph",
-            "Iloilo, Ph",
-            "Dumaguete, Ph",
-        ]
-        mindanao = ["Davao, Ph", "Camiguin, Ph", "Siargao, Ph", "Zamboanga, Ph"]
+        visited = db.execute(
+            "SELECT fsq_id FROM visited WHERE user_id = ? ORDER BY created DESC",
+            (g.user["id"],),
+        ).fetchall()
+        likes = db.execute(
+            "SELECT fsq_id FROM liked WHERE user_id = ?",
+            (g.user["id"],),
+        ).fetchall()
 
-        photos_luzon = await get_photos_data(luzon)
-        photos_visayas = await get_photos_data(visayas)
-        photos_mindanao = await get_photos_data(mindanao)
+        close_db()
 
-        return render_template(
-            "user/index.html",
-            photos_luzon=photos_luzon,
-            photos_visayas=photos_visayas,
-            photos_mindanao=photos_mindanao,
-        )
+        city = g.user["province"]
+        categories = "12000,19000,16000,17000,10000,13000"
+        places = await get_places_data(city, categories)
+
+        myvisited = get_visited_places_data(visited)
+        unvisited_places = [place for place in places if not place["visited"]]
+        unvisited_places = unvisited_places[:3]
+
+        if places:
+            return render_template(
+                "user/index.html",
+                places=places,
+                city=city,
+                visited=visited,
+                likes=likes,
+                myvisited=myvisited,
+                unvisited_places=unvisited_places,
+            )
+        else:
+            return "Error: Failed to fetch places data."
         # return render_template('user/index.html')
 
     return asyncio.run(inner())
@@ -222,7 +154,7 @@ def popular():
     from app.auth import login_required
 
     @login_required
-    async def inner():
+    async def inner(city=None, categories=None):
         if request.method == "POST":
             city = request.form.get("city", "Philippines")
             categories = request.form.get("category")
@@ -235,24 +167,13 @@ def popular():
             else:
                 return "Error: Failed to fetch places data."
         else:
-            location_list = [
-                "Makati",
-                "Cebu",
-                "Davao",
-                "Batangas",
-                "Tagaytay",
-                "Boracay",
-                "Bohol",
-                "Zamboanga",
-                "Camiguin",
-                "Siargao",
-                "Manila",
-                "Baguio",
-                "Ifugao",
-            ]
-            categories = "12000,19000,16000,17000,10000,13000"
-            city = random.choice(location_list)
+
+            city = g.user["province"]
+            categories = categories or request.args.get(
+                "categories", "12000,19000,16000,17000,10000,13000"
+            )
             places = await get_places_data(city, categories)
+
             print(city)
             if places:
                 return render_template(
@@ -271,8 +192,11 @@ def place_info(fsq_id):
     @login_required
     async def inner():
         place = await get_place_data(fsq_id)
+        todaydate = datetime.now().strftime("%Y-%m-%d")
         if place:
-            return render_template("user/place_info.html", place=place)
+            return render_template(
+                "user/place_info.html", place=place, todaydate=todaydate
+            )
         else:
             return "Error: Failed to fetch place data."
 
@@ -384,7 +308,7 @@ async def get_place_data(fsq_id):
                     # Fetch photos for each related place
                     async with session.get(
                         FOURSQUARE_API_PHOTOS_URL.format(fsq_id=related_place["fsq_id"])
-                        + "?limit=1",
+                        + "?limit=4",
                         headers=headers,
                     ) as photo_response:
                         # check if there is a photo
@@ -587,15 +511,36 @@ def visited():
     @login_required
     def inner():
         db = get_db()
-        # get all the visited fsq_id in the database table
+
+        items_per_page = 3
+        page = request.args.get("page", 1, type=int)
+        offset = (page - 1) * items_per_page
+
         visited = db.execute(
-            "SELECT fsq_id FROM visited WHERE user_id = ? ORDER BY created DESC",
-            (g.user["id"],),
+            "SELECT fsq_id FROM visited WHERE user_id = ? ORDER BY created DESC LIMIT ? OFFSET ?",
+            (g.user["id"], items_per_page, offset),
         ).fetchall()
 
+        total_visited = db.execute(
+            "SELECT COUNT(*) FROM visited WHERE user_id = ?", (g.user["id"],)
+        ).fetchone()[0]
+
+        total_pages = (total_visited + items_per_page - 1) // items_per_page
         places = get_visited_places_data(visited)
 
-        return render_template("user/visited.html", places=places)
+        # Calculate items start and end for the current page
+        items_start = offset + 1
+        items_end = min(offset + items_per_page, total_visited)
+
+        return render_template(
+            "user/visited.html",
+            places=places,
+            page=page,
+            total_pages=total_pages,
+            total_entries=total_visited,
+            items_start=items_start,
+            items_end=items_end,
+        )
 
     return inner()
 
@@ -608,14 +553,36 @@ def liked():
     def inner():
         db = get_db()
         # get all the visited fsq_id in the database table
+
+        items_per_page = 3
+        page = request.args.get("page", 1, type=int)
+        offset = (page - 1) * items_per_page
+
         liked = db.execute(
-            "SELECT fsq_id FROM liked WHERE user_id = ? ORDER BY created DESC",
-            (g.user["id"],),
+            "SELECT fsq_id FROM liked WHERE user_id = ? ORDER BY created DESC LIMIT ? OFFSET ?",
+            (g.user["id"], items_per_page, offset),
         ).fetchall()
 
+        total_likes = db.execute(
+            "SELECT COUNT(*) FROM liked WHERE user_id = ?", (g.user["id"],)
+        ).fetchone()[0]
+
+        total_pages = (total_likes + items_per_page - 1) // items_per_page
         places = get_visited_places_data(liked)
 
-        return render_template("user/liked.html", places=places)
+        # Calculate items start and end for the current page
+        items_start = offset + 1
+        items_end = min(offset + items_per_page, total_likes)
+
+        return render_template(
+            "user/liked.html",
+            places=places,
+            page=page,
+            total_pages=total_pages,
+            total_entries=total_likes,
+            items_start=items_start,
+            items_end=items_end,
+        )
 
     return inner()
 

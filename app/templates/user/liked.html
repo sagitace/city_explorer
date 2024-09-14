@@ -2,7 +2,7 @@
 
 <h1>
   {% block title %}
-    Liked
+    Likes
   {% endblock %}
 </h1>
 
@@ -73,7 +73,7 @@
                                     <div class="flex justify-between mb-4 rounded-t sm:mb-5">
                                         <div class="text-lg text-gray-900 md:text-xl dark:text-white">
                                             <h3 class="font-semibold text-gray-900">
-                                                <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}">{{place.name}}</a>
+                                                <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" class="hover:underline">{{place.name}}</a>
                                             </h3>
                                             <div class="flex mt-2">
                                                 <div class="flex gap-1">
@@ -202,5 +202,37 @@
                 <p class="text-gray-800 mt-16 text-center text-2xl">No visited places</p>
             {% endif %}
         </div>
+          <div class="flex flex-col items-end mt-2">
+            <span class="text-sm text-gray-700 dark:text-gray-400">
+                Showing 
+                <span class="font-semibold text-gray-900 dark:text-white">{{ items_start }}</span> 
+                to 
+                <span class="font-semibold text-gray-900 dark:text-white">{{ items_end }}</span> 
+                of 
+                <span class="font-semibold text-gray-900 dark:text-white">{{ total_entries }}</span> 
+                Likes
+            </span>
+        
+            <div class="inline-flex mt-2 xs:mt-0">
+                <!-- Previous Button -->
+                <a href="{{ url_for('user.visited', page=page-1) }}" {% if page <= 1 %} class='cursor-not-allowed opacity-80 disabled' disabled{% endif %}>
+                    <button class="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-gray-800 rounded-s hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white {% if page <= 1 %} cursor-not-allowed opacity-50 disabled {% endif %}" {% if page <= 1 %} disabled {% endif %}>
+                    <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
+                    </svg>
+                    Prev
+                    </button>
+                </a>
+
+                <!-- Next Button -->
+                <a href="{{ url_for('user.visited', page=page+1) }}" {% if page >= total_pages %} class="cursor-not-allowed opacity-80" disabled{% endif %}>
+                    <button class="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-gray-800 border-0 border-s border-gray-700 rounded-e hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white {% if page >= total_pages %} cursor-not-allowed opacity-50{% endif %}" {% if page >= total_pages %} disabled {% endif %} >
+                    Next
+                    <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                    </svg>
+                    </button>
+                </a>
+            </div>
     </section>
 {% endblock %}

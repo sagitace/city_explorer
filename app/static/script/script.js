@@ -34,3 +34,10 @@ thumbnails.forEach((thumbnail) => {
 		mainImage.src = this.src;
 	});
 });
+
+$(document).ready(function () {
+	$("#city").select2({
+		placeholder: "Select a city",
+		allowClear: true,
+	});
+});

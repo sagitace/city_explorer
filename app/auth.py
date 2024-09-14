@@ -1,5 +1,4 @@
 import functools
-
 from flask import (
     Blueprint,
     flash,
@@ -9,64 +8,62 @@ from flask import (
     request,
     session,
     url_for,
+    current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.db import get_db
 from app.user import index
 from . import *
 from flask_mail import Message
-from wtforms import Form, BooleanField, StringField, PasswordField, validators
+from wtforms import Form, StringField, PasswordField, validators
+import json, os
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 class RegistrationForm(Form):
-    username = StringField("Username", [validators.Length(min=4, max=25)])
-    email = StringField("Email Address", [validators.Length(min=6, max=35)])
+    firstname = StringField("firstname", [validators.Length(min=4, max=35)])
+    lastname = StringField("lastname", [validators.Length(min=4, max=35)])
+    province = StringField("province", [validators.length(min=4)])
+    email = StringField("email", [validators.Length(min=6, max=35)])
     password = PasswordField(
-        "New Password",
-        [
+        "Password",
+        validators=[
             validators.DataRequired(),
-            validators.EqualTo("confirm", message="Passwords must match"),
+            validators.Length(
+                min=8, message="Password must be at least 8 characters long"
+            ),
         ],
     )
-    confirm = PasswordField("Repeat Password")
-    accept_tos = BooleanField("I accept the TOS", [validators.DataRequired()])
 
 
 @bp.route("/register", methods=("POST", "GET"))
 def register():
-    # form = RegistrationForm(request.form)
-    if request.method == "POST":
-        firstname = request.form["firstname"]
-        lastname = request.form["lastname"]
-        email = request.form["email"]
-        password = request.form["password"]
-        db = get_db()
-        error = None
-
-        if not firstname:
-            error = "First name is required."
-        elif not lastname:
-            error = "Last name is required."
-        elif not email:
-            error = "Email is required."
-        elif not password:
-            error = "Password is required."
-
-        if error is None:
+    if g.user is None:
+        form = RegistrationForm(request.form)
+        if request.method == "POST" and form.validate():
+            db = get_db()
             try:
                 db.execute(
-                    "INSERT INTO user (firstname, lastname, email, password) VALUES (?, ?, ?, ?)",
-                    (firstname, lastname, email, generate_password_hash(password)),
+                    "INSERT INTO user (firstname, lastname, province, email, password) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        form.firstname.data,
+                        form.lastname.data,
+                        form.province.data,
+                        form.email.data,
+                        generate_password_hash(form.password.data),
+                    ),
                 )
                 db.commit()
 
-                token = s.dumps(email, salt="email-confirm")
+                token = s.dumps(form.email.data, salt="email-confirm")
 
-                msg = Message("Email Verification - City Explorer", recipients=[email])
+                msg = Message(
+                    "Email Verification - City Explorer",
+                    recipients=[form.email.data],
+                )
                 link = url_for("auth.confirm", token=token, _external=True)
-                msg.body = f"Hi {firstname}\nPlease click the link to verify your email: {link}"
+                msg.body = f"Hi {form.firstname.data}\nPlease click the link to verify your email: {link}"
 
                 # Send the email
                 try:
@@ -80,11 +77,32 @@ def register():
                     return redirect(url_for("auth.register"))
 
             except db.IntegrityError:
-                error = f"{email} is already registered."
+                error = f"{form.email.data} is already registered."
             else:
                 return redirect(url_for("auth.login"))
-        flash(error, "danger")
-    return render_template("auth/register.html")
+            flash(error, "danger")
+        try:
+            json_file_path = os.path.join(
+                current_app.static_folder,
+                "philippine_provinces_cities_municipalities_and_barangays_2019v2.json",
+            )
+            with open(json_file_path) as myjsonfile:
+                mydata = json.load(myjsonfile)
+        except FileNotFoundError:
+            flash("Data file not found.", "danger")
+            mydata = []
+        provinces = set()
+        for region_key, region_value in mydata.items():
+            if "province_list" in region_value:
+                for province_key in region_value["province_list"].keys():
+                    provinces.add(province_key)
+
+        # Convert the set to a sorted list
+        provinces_list = sorted(list(provinces))
+
+        return render_template("auth/register.html", data=provinces_list)
+    else:
+        return redirect(url_for("user.index"))
 
 
 @bp.route("/confirm/<token>")
@@ -111,26 +129,29 @@ def confirm(token):
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        db = get_db()
-        error = None
-        user = db.execute("SELECT * FROM user WHERE email = ?", (email,)).fetchone()
+    if g.user is None:
+        if request.method == "POST":
+            email = request.form["email"]
+            password = request.form["password"]
+            db = get_db()
+            error = None
+            user = db.execute("SELECT * FROM user WHERE email = ?", (email,)).fetchone()
 
-        if user is None:
-            error = "Email don't exist."
-        elif not check_password_hash(user["password"], password):
-            error = "Incorrect password."
+            if user is None:
+                error = "Email don't exist."
+            elif not check_password_hash(user["password"], password):
+                error = "Incorrect password."
 
-        if error is None:
-            session.clear()
-            session["user_id"] = user["id"]
-            return redirect(url_for("user.index"))
+            if error is None:
+                session.clear()
+                session["user_id"] = user["id"]
+                return redirect(url_for("user.index"))
 
-        flash(error, "danger")
+            flash(error, "danger")
 
-    return render_template("auth/login.html")
+        return render_template("auth/login.html")
+    else:
+        return redirect(url_for("user.index"))
 
 
 @bp.before_app_request

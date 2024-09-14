@@ -3,143 +3,252 @@
 <h1>{% block title %}Welcome{% endblock %}</h1>
 
 {% block content %}
-    <section class="max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8">
-       
-        <div class="px-4 mx-auto max-w-screen-xl lg:pb-16 lg:px-6">
-            <div class="mx-auto max-w-screen-sm text-center mb-8">
-                <h2 class="mb-4 text-3xl lg:text-4xl tracking-tight font-extrabold text-gray-800">Welcome to City Explorer Philippines!</h2>
-                <p class="font-light text-gray-500 sm:text-xl">Discover the best places, get real-time weather updates, and explore your city like never before. Let's start your adventure!</p>
-            </div> 
-
-            <section>
-                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
-                    <div>
-                        <div id="gallery" class="relative w-full" data-carousel="slide">
-                            <!-- Carousel wrapper -->
-                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96 ">
-
-                                {% for place in photos_luzon %}
-                                    <!-- Each slide -->
-                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
-                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
-                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
-                                            alt="Photo of {{ place.name }}">
-                                    </div>
-                                {% endfor %}
-                            
-                            </div>  
-                            <!-- Slider controls -->
-                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50  group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                                    </svg>
-                                    <span class="sr-only">Previous</span>
-                                </span>
-                            </button>
-                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white  group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                                    </svg>
-                                    <span class="sr-only">Next</span>
-                                </span>
-                            </button>
-                        </div>
-
-                    </div>
-                    <div class="mt-4 md:mt-0">
-                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Luzon</h2>
-                        <p class="mb-6 font-light text-gray-500 md:text-lg">The largest island group, the political and economic center of the Philippines, home to the nation's capital, <a href="#" class="text-blue-700 underline">Manila</a>. Known for its bustling cities, popular destinations, and diverse culture.</p>
-                    </div>
-                </div>
-            </section>
-            <section>
-                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
-                    <div class="md:order-2">
-                        <div id="gallery" class="relative w-full" data-carousel="slide">
-                            <!-- Carousel wrapper -->
-                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
-
-                                {% for place in photos_visayas %}
-                                    <!-- Each slide -->
-                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
-                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
-                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
-                                            alt="Photo of {{ place.name }}">
-                                    </div>
-                                {% endfor %}
-                            
-                            </div>  
-                            <!-- Slider controls -->
-                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                                    </svg>
-                                    <span class="sr-only">Previous</span>
-                                </span>
-                            </button>
-                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                                    </svg>
-                                    <span class="sr-only">Next</span>
-                                </span>
-                            </button>
-                        </div>
-
-                    </div>
-                    <div class="mt-4 md:mt-0 order-1 md:order-1">
-                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Visayas</h2>
-                        <p class="mb-6 font-light text-gray-500 md:text-lg">Located in the central part of the archipelago, is famous for its stunning beaches, vibrant festivals, and rich culture heritage. This region includes world-renowned destinations like <a href="#" class="text-blue-700 underline">Boracay</a>  and <a href="#" class="text-blue-700 underline">Cebu</a>, offering a mix of natural beauty and historical significance.</p>
-                    </div>
-                </div>
-            </section>
-            <section>
-                <div class="gap-8 items-center px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-5 lg:px-6">
-                    <div>
-                        <div id="gallery" class="relative w-full" data-carousel="slide">
-                            <!-- Carousel wrapper -->
-                            <div class="relative h-56 overflow-hidden rounded-lg md:h-96">
-
-                                {% for place in photos_mindanao %}
-                                    <!-- Each slide -->
-                                    <div class="duration-1000 ease-in-out {% if loop.first %} {% else %}hidden{% endif %}" data-carousel-item>
-                                        <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" 
-                                            class="absolute block max-w-full h-auto -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-md" 
-                                            alt="Photo of {{ place.name }}">
-                                    </div>
-                                {% endfor %}
-                            
-                            </div>  
-                            <!-- Slider controls -->
-                            <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                                    </svg>
-                                    <span class="sr-only">Previous</span>
-                                </span>
-                            </button>
-                            <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white group-focus:outline-none">
-                                    <svg class="w-4 h-4 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                                    </svg>
-                                    <span class="sr-only">Next</span>
-                                </span>
-                            </button>
-                        </div>
-
-                    </div>
-                    <div class="mt-4 md:mt-0">
-                        <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-800">Mindanao</h2>
-                        <p class="mb-6 font-light text-gray-500 md:text-lg">The southernmost island group, boasts vast natural resources and a wealth of cultural diversity. It is known for its lush forests, scenic landscapes and its vibrant indigenous communities. Mindanao is a region of rich cultural interactions, where different ethnic groups and traditions converge, making it a unique part of the Philippine identity.</p>
-                    </div>
-                </div>
-            </section>
+    
+<div class="max-w-screen-xl p-6">   
+    <div class="grid grid-cols-4 gap-4">
+        <div class="max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow max-md:col-span-4 md:col-span-2 lg:col-span-1 flex flex-col">
+            <img src="{{url_for('static', filename='assets/visited.svg')}}" alt="Visited" class="h-10 w-10">
+            <h5 class="mb-2 text-xl font-semibold tracking-tight text-gray-900 ">Places Visited</h5>
+            <p class="mb-3 font-normal text-gray-500 dark:text-gray-400">You have visited a total of <span class="font-semibold">{{visited|length}} place(s)</span>. Explore more destinations and keep track of your adventures.</p>
+            <a href="{{url_for('user.visited')}}" class="inline-flex font-medium items-center text-blue-600 hover:underline mt-auto">
+                View Visited
+                <svg class="w-3 h-3 ms-2.5 rtl:rotate-[270deg]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11v4.833A1.166 1.166 0 0 1 13.833 17H2.167A1.167 1.167 0 0 1 1 15.833V4.167A1.166 1.166 0 0 1 2.167 3h4.618m4.447-2H17v5.768M9.111 8.889l7.778-7.778"/>
+                </svg>
+            </a>
         </div>
-    </section>
+        <div class="max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow max-md:col-span-4 md:col-span-2 lg:col-span-1 flex flex-col">
+            <img src="{{url_for('static', filename='assets/heart.svg')}}" alt="Heart Icon" class="h-10 w-10">
+            <h5 class="mb-2 text-xl font-semibold tracking-tight text-gray-900 ">Places Liked</h5>
+            <p class="mb-3 text-base font-normal text-gray-500 dark:text-gray-400">You have liked a total of <span class="font-semibold">{{likes|length}} place(s)</span>. Discover more interesting spots and manage your favorites.</p>
+            <a href="{{url_for('user.liked')}}" class="inline-flex font-medium items-center text-blue-600 hover:underline mt-auto">
+                View Likes
+                <svg class="w-3 h-3 ms-2.5 rtl:rotate-[270deg]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11v4.833A1.166 1.166 0 0 1 13.833 17H2.167A1.167 1.167 0 0 1 1 15.833V4.167A1.166 1.166 0 0 1 2.167 3h4.618m4.447-2H17v5.768M9.111 8.889l7.778-7.778"/>
+                </svg>
+            </a>
+        </div>
+        <div class="max-w-full p-6 bg-white border border-gray-200 rounded-lg shadow max-md:col-span-4 md:col-span-4 lg:col-span-2">
+            <div class="w-full max-w-screen-sm bg-white rounded-xl ring-8 ring-white ring-opacity-40">
+                <div class="flex justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-3xl md:text-6xl font-bold">{{places[0].weather.main["temp"]}}°C</span>
+                        <span class="font-semibold mt-1 text-gray-500">{{city|title}}, Philippines</span>
+                    </div>
+                    {% if places[0].weather.weather[0]['icon'] == '01d' %}
+                        <img src="{{url_for('static', filename='assets/weather/01d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '01n' %}
+                        <img src="{{url_for('static', filename='assets/weather/01n.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '02d'%}
+                        <img src="{{url_for('static', filename='assets/weather/02d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '02n'%}
+                        <img src="{{url_for('static', filename='assets/weather/02n&04n.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '03d' or places[0].weather.weather[0]['icon'] == '03n'%}
+                        <img src="{{url_for('static', filename='assets/weather/03.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '04n'%}
+                        <img src="{{url_for('static', filename='assets/weather/02n&04n.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '04d'%}
+                        <img src="{{url_for('static', filename='assets/weather/04d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '10d'%}
+                        <img src="{{url_for('static', filename='assets/weather/09_10d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '09d' or places[0].weather.weather[0]['icon'] == '09n'%} 
+                        <img src="{{url_for('static', filename='assets/weather/09_10d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '10n'%}
+                        <img src="{{url_for('static', filename='assets/weather/10n.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '11n'%}
+                        <img src="{{url_for('static', filename='assets/weather/11n.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% elif places[0].weather.weather[0]['icon'] == '11d'%}
+                        <img src="{{url_for('static', filename='assets/weather/11d.svg')}}" alt="Weather icon" class="h-16 w-16 md:h-24 md:w-24">
+                    {% endif %}
+                </div>
+                <p class="text-gray-500 text-base mt-5">
+                   {% if places[0].weather.weather[0]['main'] == 'Rain' %}
+                        Don't forget your umbrella! A rainy day adds charm to the city's vibe.
+                    {% elif places[0].weather.weather[0]['main'] == 'Clear' %}
+                        Perfect day for outdoor adventures! Enjoy the clear skies and sunshine.
+                    {% elif places[0].weather.weather[0]['main'] == 'Clouds' %}
+                        The clouds may be hanging around, but it's still a great day to explore. Keep your plans!
+                    {% elif places[0].weather.weather[0]['main'] == 'Snow' %}
+                        Time to bundle up! The snow adds a magical touch to the city. Stay warm and cozy.
+                    {% elif places[0].weather.weather[0]['main'] == 'Thunderstorm' %}
+                        Stay indoors and stay safe! A thunderstorm is brewing, so it's a good time to enjoy indoor activities.
+                    {% elif places[0].weather.weather[0]['main'] == 'Drizzle' %}
+                        Light rain today! A jacket or raincoat might be handy, but it's still great for sightseeing.
+                    {% elif places[0].weather.weather[0]['main'] == 'Mist' %}
+                        The city is covered in mist! While visibility may be low, the mystic atmosphere adds a sense of adventure.
+                    {% elif places[0].weather.weather[0]['main'] == 'Haze' %}
+                        The air is hazy today. Take it easy and enjoy the surroundings at a slower pace.
+                    {% else %}
+                        Whatever the weather, it's a great day to explore and make the most of your trip!
+                    {% endif %}
+                </p>
+                <div class="w-full grid grid-cols-4 gap-4 justify-between mt-5">
+                    <div class="flex flex-col items-center max-[450px]:col-span-2">
+                        <span class="font-semibold text-base">{{places[0].weather.clouds['all']}}%</span>
+                        <img src="{{url_for('static', filename='assets/weather/03.svg')}}" alt="Cloudiness" class="h-7 w-7 sm:w-10 sm:h-10 mt-3">
+                        <span class="font-semibold mt-1 text-xs sm:text-sm">Cloudiness</span>
+                    </div>
+                    <div class="flex flex-col items-center max-[450px]:col-span-2">
+                        <span class="font-semibold text-base">{{places[0].weather.wind['speed']}}&nbsp;m/s</span>
+                        <img src="{{url_for('static', filename='assets/weather/wind.svg')}}" alt="Wind Speed" class="h-7 w-7 sm:w-10 sm:h-10 mt-3">
+                        <span class="font-semibold mt-1 text-xs sm:text-sm">Wind Speed</span>
+                    </div>
+                    <div class="flex flex-col items-center max-[450px]:col-span-2 max-[450px]:mt-2">
+                        <span class="font-semibold text-base">{{places[0].weather.main['pressure']}}&nbsp;hPa</span>
+                        <img src="{{url_for('static', filename='assets/weather/pressure.svg')}}" alt="pressure" class="h-7 w-7 sm:w-10 sm:h-10 mt-3">
+                        <span class="font-semibold mt-1 text-xs sm:text-sm">Pressure</span>
+                    </div>
+                    <div class="flex flex-col items-center max-[450px]:col-span-2 max-[450px]:mt-2">
+                        <span class="font-semibold text-base">{{places[0].weather.main['humidity']}}&nbsp;%</span>
+                        <img src="{{url_for('static', filename='assets/weather/humidity.svg')}}" alt="Humidity" class="h-7 w-7 sm:w-10 sm:h-10 mt-3">
+                        <span class="font-semibold mt-1 text-xs sm:text-sm">Humidity</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+     {% if myvisited|length != 0 %}
+        <div class="flex items-center mt-5 mb-2 justify-between">
+            <h1 class="text-xl text-gray-900">Recently Visited Places</h1>
+            <a href="{{url_for('user.visited')}}" class="flex items-center text-base text-indigo-700 border border-indigo-600 hover:border-indigo-800 hover:text-white hover:bg-indigo-800 py-1.5 px-3 gap-2 rounded-md transition-all duration-150 ease-in-out">
+                <span class="hidden sm:block">
+                    View
+                </span>More
+                <svg class="w-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    viewBox="0 0 24 24" class="w-6 h-6 ml-2">
+                    <path d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+            </a>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+       
+            {% for visited in myvisited %}
+                {% if loop.index <=3 and visited.visited %}
+                    <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md flex flex-col h-auto">
+                        <div>
+                            {% if visited.photos %}
+                                <div class="w-full h-52 overflow-hidden rounded-md">
+                                    <img src="{{ visited.photos[0].prefix }}1920x1440{{ visited.photos[0].suffix }}" alt="Photo of {{ visited.name }}" class="w-full h-52 object-cover rounded-md hover:scale-110 ease-in-out duration-300 transition-all">
+                                </div>
+                            {% else %}
+                                <div class="flex items-center justify-center w-full h-52 bg-gray-400 rounded-md ">
+                                <svg class="w-10 h-10 text-gray-200 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                                    <path d="M18 0H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2Zm-5.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm4.376 10.481A1 1 0 0 1 16 15H4a1 1 0 0 1-.895-1.447l3.5-7A1 1 0 0 1 7.468 6a.965.965 0 0 1 .9.5l2.775 4.757 1.546-1.887a1 1 0 0 1 1.618.1l2.541 4a1 1 0 0 1 .028 1.011Z"/>
+                                </svg>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h2 class="mb-1 text-lg font-bold tracking-tight text-gray-900"><a href="{{url_for('user.place_info', fsq_id=visited.fsq_id)}}" class="hover:underline">{{ visited.name }}</a></h2>
+
+                        <div class="flex gap-1 justify-between mb-2">
+                            <div class="flex gap-1">
+                                    <p class="flex text-xs font-semibold text-white">
+                                    <span class="rounded-lg bg-blue-900 px-2 py-1">{{ visited.categories[0].short_name }}</span>
+                                </p>
+                            <!--    {% if visited.visited == True %}
+                                    <p class="flex text-xs font-semibold text-white">
+                                        <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
+                                    </p>
+                                {% endif %}
+                            -->
+                            </div>
+                            <div>
+                                {% if visited.liked %}
+                                    <svg class="w-6 h-6 text-red-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                    </svg>
+
+                                    <span class="sr-only">Icon description</span>
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='assets/heart-outline.svg') }}" alt="Unlike" class="w-6 h-6">
+                                {% endif %}
+                            </div>
+                        </div>
+                
+                        <div class="mt-auto">
+                            <div class="flex items-center space-x-4">
+                                <img class="w-7 h-7 rounded-full" src="{{ url_for('static', filename='assets/location.svg') }}" alt="Location icon" />
+                                <span class="font-medium dark:text-white">
+                                    {{ visited.location['locality'] }}
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="flex items-center mt-5 mb-2 justify-between">
+        <h1 class="text-xl text-gray-900">Popular Places in <span class="font-bold">{{city|title}}</span></h1>
+        <a href="{{url_for('user.popular')}}" class="flex items-center text-base text-indigo-700 border border-indigo-600 hover:border-indigo-800 hover:text-white hover:bg-indigo-800 py-1.5 px-3 gap-2 rounded-md transition-all duration-150 ease-in-out">
+            <span class="hidden sm:block">
+                View 
+            </span>More
+            <svg class="w-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                viewBox="0 0 24 24" class="w-6 h-6 ml-2">
+                <path d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+            </svg>
+        </a>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {% set counter = 0 %}
+        {% for place in unvisited_places %}
+            
+                    <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md flex flex-col h-auto">
+                        <div>
+                            {% if place.photos %}
+                                <div class="w-full h-52 overflow-hidden rounded-md">
+                                    <img src="{{ place.photos[0].prefix }}1920x1440{{ place.photos[0].suffix }}" alt="Photo of {{ place.name }}" class="w-full h-52 object-cover rounded-md hover:scale-110 ease-in-out duration-300 transition-all">
+                                </div>
+                            {% else %}
+                                <div class="flex items-center justify-center w-full h-52 bg-gray-400 rounded-md ">
+                                <svg class="w-10 h-10 text-gray-200 dark:text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+                                    <path d="M18 0H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2Zm-5.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm4.376 10.481A1 1 0 0 1 16 15H4a1 1 0 0 1-.895-1.447l3.5-7A1 1 0 0 1 7.468 6a.965.965 0 0 1 .9.5l2.775 4.757 1.546-1.887a1 1 0 0 1 1.618.1l2.541 4a1 1 0 0 1 .028 1.011Z"/>
+                                </svg>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h2 class="mb-1 text-lg font-bold tracking-tight text-gray-900"><a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" class="hover:underline">{{ place.name }}</a></h2>
+
+                        <div class="flex gap-1 justify-between mb-2">
+                            <div class="flex gap-1">
+                                    <p class="flex text-xs font-semibold text-white">
+                                    <span class="rounded-lg bg-blue-900 px-2 py-1">{{ place.categories[0].short_name }}</span>
+                                </p>
+                                {% if place.visited == True %}
+                                    <p class="flex text-xs font-semibold text-white">
+                                        <span class="rounded-lg bg-green-900 px-2 py-1">Visited</span>
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if place.liked %}
+                                    <svg class="w-6 h-6 text-red-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="m12.75 20.66 6.184-7.098c2.677-2.884 2.559-6.506.754-8.705-.898-1.095-2.206-1.816-3.72-1.855-1.293-.034-2.652.43-3.963 1.442-1.315-1.012-2.678-1.476-3.973-1.442-1.515.04-2.825.76-3.724 1.855-1.806 2.201-1.915 5.823.772 8.706l6.183 7.097c.19.216.46.34.743.34a.985.985 0 0 0 .743-.34Z"/>
+                                    </svg>
+
+                                    <span class="sr-only">Icon description</span>
+                                {% else %}
+                                        <img src="{{ url_for('static', filename='assets/heart-outline.svg') }}" alt="Unlike" class="w-6 h-6">
+                                {% endif %}
+                            </div>
+                        </div>
+                
+                        <div class="mt-auto">
+                            <div class="flex items-center space-x-4">
+                                <img class="w-7 h-7 rounded-full" src="{{ url_for('static', filename='assets/location.svg') }}" alt="Location icon" />
+                                <span class="font-medium dark:text-white">
+                                    {{ place.location['locality'] }}
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                
+        {% endfor %}
+    </div>
+</div>
+
+
 {% endblock %}

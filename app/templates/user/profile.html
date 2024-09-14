@@ -43,37 +43,37 @@
                                     </div>
                                     <form action="{{url_for('user.update_character')}}" method="POST">
                                         <div>
-                                                <div class="flex w-full space-x-4 justify-between">
-                                                    <div>
-                                                        <input type="radio" id="character1" name="character" value="character1.svg" checked>
-                                                        <label for="character1">
-                                                            <img src="{{ url_for('static', filename='assets/characters/character1.svg') }}" alt="Character 1" class="h-20 w-20 md:h-28 md:w-28">
-                                                        </label>
-                                                    </div>
-                                                    <div>
-                                                        <input type="radio" id="character2" name="character" value="character2.svg">
-                                                        <label for="character2">
-                                                            <img src="{{ url_for('static', filename='assets/characters/character2.svg') }}" alt="Character 2" class="h-20 w-20 md:h-28 md:w-28">
-                                                        </label>
-                                                    </div>
-                                                    <div>
-                                                        <input type="radio" id="character3" name="character" value="character3.svg">
-                                                        <label for="character3">
-                                                            <img src="{{ url_for('static', filename='assets/characters/character3.svg') }}" alt="Character 3" class="h-20 w-20 md:h-28 md:w-28">
-                                                        </label>
-                                                    </div>
-                                                    <div>
-                                                        <input type="radio" id="character4" name="character" value="character4.svg">
-                                                        <label for="character4">
-                                                            <img src="{{ url_for('static', filename='assets/characters/character4.svg') }}" alt="Character 4" class="h-20 w-20 md:h-28 md:w-28">
-                                                        </label>
-                                                    </div>
+                                            <div class="flex w-full space-x-4 justify-between">
+                                                <div>
+                                                    <input type="radio" id="character1" name="character" value="character1.svg" checked>
+                                                    <label for="character1">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character1.svg') }}" alt="Character 1" class="h-20 w-20 md:h-28 md:w-28">
+                                                    </label>
                                                 </div>
-                                            </div>    
-                                            <div class="flex justify-end my-2">
-                                                <button type="submit" class="text-white bg-indigo-700  hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center mt-5">Save</button>
-                                            </div>          
-                                    </form>
+                                                <div>
+                                                    <input type="radio" id="character2" name="character" value="character2.svg">
+                                                    <label for="character2">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character2.svg') }}" alt="Character 2" class="h-20 w-20 md:h-28 md:w-28">
+                                                    </label>
+                                                </div>
+                                                <div>
+                                                    <input type="radio" id="character3" name="character" value="character3.svg">
+                                                    <label for="character3">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character3.svg') }}" alt="Character 3" class="h-20 w-20 md:h-28 md:w-28">
+                                                    </label>
+                                                </div>
+                                                <div>
+                                                    <input type="radio" id="character4" name="character" value="character4.svg">
+                                                    <label for="character4">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character4.svg') }}" alt="Character 4" class="h-20 w-20 md:h-28 md:w-28">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>    
+                                        <div class="flex justify-end my-2">
+                                            <button type="submit" class="text-white bg-indigo-700  hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center mt-5">Save</button>
+                                        </div>          
+                                </form>
                             </div>
                         </div>
                     </div>

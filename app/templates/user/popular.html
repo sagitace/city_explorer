@@ -18,7 +18,7 @@
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                             </svg>
                         </div>
-                        <input type="search" name="city" id="default-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" placeholder="Search for cities" value="{{ city }}" required/>
+                        <input type="search" name="city" id="default-search" class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" placeholder="Search for cities" value="{{ city|title }}" required/>
                     </div>
 
                     <div class="relative w-1/4">
@@ -40,7 +40,7 @@
             </div>
             <div class="w-full gap-2 mb-2 {% if places[0].weather.cod == 200 %}grid grid-cols-2{% endif %}">
                 <div class="{% if places[0].weather.cod == 200 %}max-lg:col-span-2{% endif %}">
-                    <h1 class="text-xl font-semibold w-full">Popular in {{ city }}</h1>
+                    <h1 class="text-xl font-semibold w-full">Popular in {{ city|title }}</h1>
                 </div>
                 <div class="flex lg:justify-end max-lg:col-span-2 gap-5">
                     {% if places[0].weather.cod == 200 %}
@@ -101,7 +101,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        <h2 class="mb-1 text-lg font-bold tracking-tight text-gray-900"><a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}">{{ place.name }}</a></h2>
+                        <h2 class="mb-1 text-lg font-bold tracking-tight text-gray-900"><a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" class="hover:underline">{{ place.name }}</a></h2>
 
                         <div class="flex gap-1 justify-between mb-2">
                             <div class="flex gap-1">
@@ -121,6 +121,8 @@
                                     </svg>
 
                                     <span class="sr-only">Icon description</span>
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='assets/heart-outline.svg') }}" alt="Unlike" class="w-6 h-6">
                                 {% endif %}
                             </div>
                         </div>
