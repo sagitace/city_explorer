@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function (event) {
 	document.getElementById("readProductButton").click();
+	document.getElementById("updateProductButton").click();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -40,20 +41,4 @@ $(document).ready(function () {
 		placeholder: "Select a city",
 		allowClear: true,
 	});
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-	function truncateText(element, maxWords) {
-		const textElement = document.querySelector(element);
-		const fullText = textElement.getAttribute("data-full-text");
-		const words = fullText.split(" ");
-
-		if (words.length > maxWords) {
-			const truncatedText = words.slice(0, maxWords).join(" ") + "...";
-			textElement.textContent = truncatedText;
-		}
-	}
-
-	// Truncate notes to 5 words
-	truncateText(".note-text", 5);
 });

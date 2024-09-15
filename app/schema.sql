@@ -36,9 +36,11 @@ CREATE TABLE plans(
     user_id INTEGER NOT NULL,
     fsq_id TEXT NOT NULL,
     place_name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    region TEXT NOT NULL,
     date TEXT NOT NULL,
     notes TEXT,
-    visited TEXT NOT NULL DEFAULT 'false',
+    status TEXT NOT NULL DEFAULT 'upcoming',
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user (id)
 )

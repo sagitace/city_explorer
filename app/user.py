@@ -40,7 +40,7 @@ async def get_places_data(city, categories):
 
     params["sort"] = "POPULARITY"
     params["fields"] = "fsq_id,categories,geocodes,location,name"
-    params["limit"] = 3
+    params["limit"] = 9
 
     async with aiohttp.ClientSession() as session:
         # First, get the weather data for the city
@@ -52,9 +52,6 @@ async def get_places_data(city, categories):
                 # another location around the city
                 own_params = {
                     "near": city + ", Ph",
-                    "limit": 1,
-                    "sort": "POPULARITY",
-                    "fields": "geocodes",
                 }
                 async with session.get(
                     FOURSQUARE_API_URL,
@@ -63,14 +60,27 @@ async def get_places_data(city, categories):
                 ) as response:
                     if response.status == 200:
                         get_place = await response.json()
-                        get_place = get_place.get("results", [])
-                        if get_place[0]["geocodes"]["main"]:
-                            new_weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={get_place[0]['geocodes']['main']['latitude']}&lon={get_place[0]['geocodes']['main']['longitude']}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
-                            async with session.get(new_weather_url) as weather_response:
-                                if weather_response.status == 200:
-                                    weather = await weather_response.json()
-                                else:
-                                    weather = None
+                        get_place = (
+                            get_place.get("context", {})
+                            .get("geo_bounds", {})
+                            .get("circle", {})
+                            .get("center", {})
+                        )
+
+                        if get_place:
+                            latitude = get_place.get("latitude")
+                            longitude = get_place.get("longitude")
+                            if latitude is not None and longitude is not None:
+                                new_weather_url = f"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+                                async with session.get(
+                                    new_weather_url
+                                ) as weather_response:
+                                    if weather_response.status == 200:
+                                        weather = await weather_response.json()
+                                    else:
+                                        weather = None
+                            else:
+                                weather = None
                         else:
                             weather = None
 
@@ -167,7 +177,7 @@ def index():
         today = datetime.now().strftime("%b %d, %Y")
 
         schedules = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? ORDER BY created DESC",
+            "SELECT * FROM plans WHERE user_id = ? AND status = 'upcoming' ORDER BY date ASC",
             (g.user["id"],),
         ).fetchall()
 
@@ -184,7 +194,13 @@ def index():
                     # Handle the case where the date format is not as expected
                     schedule["date"] = "Invalid Date"
 
+            if "notes" in schedule and schedule["notes"]:
+                words = schedule["notes"].split()
+                if len(words) > 5:
+                    schedule["notes"] = " ".join(words[:5]) + "..."
+
         close_db()
+        print(places)
         if places:
             return render_template(
                 "user/index.html",
@@ -210,6 +226,7 @@ def popular():
 
     @login_required
     async def inner(city=None, categories=None):
+
         if request.method == "POST":
             city = request.form.get("city", "Philippines")
             categories = request.form.get("category")
@@ -254,12 +271,26 @@ def place_info(fsq_id):
             (g.user["id"], fsq_id),
         ).fetchone()
 
+        # format plan date
+        if get_plans:
+            get_plans_dict = dict(get_plans)  # Convert to dictionary
+
+            if get_plans_dict.get("date"):
+                try:
+                    date_obj = datetime.strptime(get_plans_dict["date"], "%Y-%m-%d")
+                    get_plans_dict["formatted_date"] = date_obj.strftime("%B %d, %Y")
+                except ValueError:
+                    get_plans_dict["formatted_date"] = "Invalid Date"
+
+        else:
+            get_plans_dict = None
+
         if place:
             return render_template(
                 "user/place_info.html",
                 place=place,
                 todaydate=todaydate,
-                plans=get_plans,
+                plans=get_plans_dict,
             )
         else:
             return "Error: Failed to fetch place data."
@@ -587,7 +618,7 @@ def visited():
     async def inner():
         db = get_db()
 
-        items_per_page = 3
+        items_per_page = 6
         page = request.args.get("page", 1, type=int)
         offset = (page - 1) * items_per_page
 
@@ -629,7 +660,7 @@ def liked():
     async def inner():
         db = get_db()
 
-        items_per_page = 3
+        items_per_page = 6
         page = request.args.get("page", 1, type=int)
         offset = (page - 1) * items_per_page
 
@@ -759,13 +790,15 @@ def add_to_plans():
         if request.method == "POST":
             fsq_id = request.form["fsq_id"]
             place_name = request.form["place_name"]
+            address = request.form["address"]
+            region = request.form["region"]
             date = request.form["visit-date"]
             notes = request.form["notes"]
 
             db = get_db()
             db.execute(
-                "INSERT INTO plans (user_id, fsq_id, place_name, date, notes) VALUES (?, ?, ?, ?, ?)",
-                (g.user["id"], fsq_id, place_name, date, notes),
+                "INSERT INTO plans (user_id, fsq_id, place_name, address, region, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (g.user["id"], fsq_id, place_name, address, region, date, notes),
             )
             db.commit()
 
@@ -777,11 +810,215 @@ def add_to_plans():
                 subject="Your Visit Has Been Scheduled - City Explorer",
                 recipients=[g.user["email"]],
             )
-            link = url_for("user.index", _external=True)
-            msg.body = f"Hi {g.user['firstname']},\n\nYour visit at {{place_name}} has been successfully scheduled for {date} with City Explorer! To view the details and explore more, simply visit the following link: {link}.\n\nThank you for choosing City Explorer, and we hope you have an amazing experience discovering new places!\n\nBest regards,\nCity Explorer Team"
+            link = url_for("user.schedules", _external=True)
+            msg.body = f"Hi {g.user['firstname']},\n\nYour visit at {place_name} has been successfully scheduled!\n\nVisit Date: {date}\nAddress: {address}\nNotes: {notes}\nView all your schedules here: {link}\n\nWe look forward to seeing you there! Thank you for choosing City Explorer, and we hope you have an amazing experience discovering new places!\n\nBest regards,\nCity Explorer Team"
 
             mail.send(msg)
 
             return redirect(request.referrer)
+
+    return asyncio.run(inner())
+
+
+@bp.route("/schedules", methods=("GET", "POST"))
+def schedules():
+    from app.auth import login_required
+
+    @login_required
+    async def inner():
+        db = get_db()
+
+        schedules = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? ORDER BY date ASC",
+            (g.user["id"],),
+        ).fetchall()
+
+        upcoming = []
+        visited = []
+        missed = []
+        cancelled = []
+
+        for schedule in schedules:
+
+            if schedule["date"] < datetime.now().strftime("%Y-%m-%d"):
+                # update status 'missed'
+                db.execute(
+                    "UPDATE plans SET status = ? WHERE id = ?",
+                    ("missed", schedule["id"]),
+                )
+                db.commit()
+
+            schedule_dict = dict(schedule)
+
+            if schedule["address"]:
+                words = schedule_dict["address"].split()
+                if len(words) > 4:
+                    schedule_dict["address"] = " ".join(words[:5]) + "..."
+
+            fsq_id = schedule_dict["fsq_id"]
+            params = {"fields": "categories"}
+            headers = {
+                "accept": "application/json",
+                "Authorization": FOURSQUARE_API_KEY,
+            }
+
+            # get the categories using foursquare_api_details
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    FOURSQUARE_API_DETAILS.format(fsq_id=fsq_id),
+                    params=params,
+                    headers=headers,
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        schedule_dict["categories"] = data["categories"]
+                    else:
+                        print(f"Error: {response.status} - {await response.text()}")
+
+            response = requests.get(
+                f"https://api.foursquare.com/v3/places/{fsq_id}", params=params
+            )
+            data = response.json()
+
+            # Format date into day and month
+            schedule_dict["day"] = datetime.strptime(
+                schedule_dict["date"], "%Y-%m-%d"
+            ).strftime("%d")
+            schedule_dict["month"] = datetime.strptime(
+                schedule_dict["date"], "%Y-%m-%d"
+            ).strftime("%b")
+
+            if schedule_dict["status"] == "upcoming":
+                upcoming.append(schedule_dict)
+            elif schedule_dict["status"] == "visited":
+                visited.append(schedule_dict)
+            elif schedule_dict["status"] == "missed":
+                missed.append(schedule_dict)
+            elif schedule_dict["status"] == "cancelled":
+                cancelled.append(schedule_dict)
+
+        # sort
+        visited.sort(key=lambda x: x["date"], reverse=True)
+        missed.sort(key=lambda x: x["date"], reverse=True)
+
+        close_db(db)
+        return render_template(
+            "user/schedule.html",
+            upcoming=upcoming,
+            visited=visited,
+            missed=missed,
+            cancelled=cancelled,
+        )
+
+    return asyncio.run(inner())
+
+
+@bp.route("/mark/visited/<int:id>")
+def mark_visited(id):
+    from app.auth import login_required
+
+    @login_required
+    async def inner():
+        db = get_db()
+
+        plan = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
+            (g.user["id"], id),
+        ).fetchone()
+
+        try:
+            # update status into visited
+            db.execute(
+                "UPDATE plans SET status = 'visited' WHERE user_id = ? AND id = ?",
+                (g.user["id"], id),
+            )
+            db.commit()
+        except db.IntegrityError:
+            pass
+
+        visited = db.execute(
+            "SELECT * FROM visited WHERE user_id = ? AND fsq_id = ?",
+            (g.user["id"], plan["fsq_id"]),
+        ).fetchall()
+
+        if not visited:
+            try:
+                db.execute(
+                    "INSERT INTO visited (user_id, fsq_id) VALUES (?, ?)",
+                    (g.user["id"], plan["fsq_id"]),
+                )
+                db.commit()
+
+            except db.IntegrityError:
+                pass
+
+        close_db(db)
+
+        return redirect(request.referrer)
+
+    return asyncio.run(inner())
+
+
+@bp.route("/mark/cancel/<int:id>")
+def mark_cancel(id):
+    from app.auth import login_required
+
+    @login_required
+    async def inner():
+        db = get_db()
+
+        plan = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
+            (g.user["id"], id),
+        ).fetchone()
+
+        try:
+            # update status into visited
+            db.execute(
+                "UPDATE plans SET status = 'cancelled' WHERE user_id = ? AND id = ?",
+                (g.user["id"], id),
+            )
+            db.commit()
+        except db.IntegrityError:
+            pass
+
+        close_db(db)
+
+        return redirect(request.referrer)
+
+    return asyncio.run(inner())
+
+
+@bp.route("/update/schedule/<int:id>", methods=("POST", "GET"))
+def update_schedule(id):
+    from app.auth import login_required
+
+    @login_required
+    async def inner():
+        db = get_db()
+
+        plan = db.execute(
+            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
+            (g.user["id"], id),
+        ).fetchone()
+
+        if request.method == "POST":
+            date = request.form["visit-date"]
+            notes = request.form["notes"]
+
+            try:
+                db.execute(
+                    "UPDATE plans SET date = ?, notes = ? WHERE user_id = ? AND id = ?",
+                    (date, notes, g.user["id"], id),
+                )
+                db.commit()
+            except db.IntegrityError:
+                pass
+            close_db(db)
+            return redirect(request.referrer)
+
+        close_db(db)
+
+        return redirect(request.referrer)
 
     return asyncio.run(inner())
