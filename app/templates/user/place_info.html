@@ -34,7 +34,7 @@
                         {% endif %}
                     </div>
                     <div class="flex items-center justify-between mt-3">
-                        <div>
+                        <div class="mt-2">
                             {% if place.visited %}
                                 <button type="button" data-modal-target="popup-modal-remove" data-modal-toggle="popup-modal-remove" 
                                     class="inline-block py-2 px-5 text-sm font-semibold text-white bg-red-700 rounded-lg shadow-md hover:bg-red-800 hover:shadow-lg transition-all duration-300 -mt-3">
@@ -135,7 +135,7 @@
                     </div>
                         
                     
-                    <h1 class="text-2xl font-bold text-gray-900 w-full">{{ place.name }} </h1>
+                    <h1 class="text-2xl font-bold text-gray-900 w-full mt-5">{{ place.name }} </h1>
                         
                     <h3 class="flex mt-2 font-semibold md:text-lg text-sm text-gray-700 w-full"><img src="{{ url_for('static', filename='assets/location.svg') }}" alt="Location logo" class="w-7 h-8 mr-2" />{{ place.location['formatted_address'] }}</h3>
                 </div>
@@ -173,7 +173,7 @@
                                 
                             </div>
                             <p class="text-sm text-gray-600 ">
-                                Change of plans? Update your plan 
+                                Change of plans? Update your schedule 
                                 <button id="updateProductButton" data-modal-target="updateProductModal" data-modal-toggle="updateProductModal" class="text-blue-600 hover:underline">here</button>.
                             </p>
                         </div>
@@ -206,7 +206,7 @@
                                         </div>
                                         <div class="flex items-center space-x-4">
                                             <button type="submit" class="text-white bg-indigo-700 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-                                                Update product
+                                                Update
                                             </button>
                                         </div>
                                     </form>
@@ -220,6 +220,7 @@
                             <div class="grid gap-4 sm:grid-cols-2 sm:gap-6">
                                 <input type="hidden" name="fsq_id" value="{{ place.fsq_id }}">
                                 <input type="hidden" name="place_name" value="{{ place.name }}">
+                                <input type="hidden" name="category" value="{{place.categories[0].name}}">
                                 <input type="hidden" name="address" value="{{place.location['formatted_address']}}">
                                 <input type="hidden" name="region" value="{{place.location['region']}}">
                                 <div class="sm:col-span-2">

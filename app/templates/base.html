@@ -20,8 +20,8 @@
                     <a type="button" href="{{ url_for('auth.logout') }}"
                     class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0">Logout</a>
                 {% else %}
-                    <a type="button" href="{{ url_for('auth.register') }}"
-                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0">Register</a>
+                    <a type="button" href="{{ url_for('auth.login') }}"
+                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0">Login</a>
                 {% endif %}
                 
             </div>
@@ -34,14 +34,6 @@
         <div class="w-full mx-auto max-w-screen-lg p-4 md:flex md:items-center md:justify-between">
         <span class="text-sm text-gray-200 sm:text-center ">© 2024 <a href="/" class="hover:underline">City Explorer</a>. All Rights Reserved.
         </span>
-        <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-200 sm:mt-0">
-            <li>
-                <a href="{{url_for('auth.login')}}" class="hover:underline me-4 md:me-6">Login</a>
-            </li>
-            <li>
-                <a href="{{url_for('auth.register')}}" class="hover:underline me-4 md:me-6">Register</a>
-            </li>
-        </ul>
         </div>
     </footer>
 

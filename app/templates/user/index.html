@@ -43,8 +43,10 @@
                         {% if schedule.notes %}
                             <p class="text-gray-600 text-base">
                                 <span class="text-gray-700 text-base">Note:</span>
-                                <span>{{ schedule.notes }}</span>
+                                <span class="line-clamp-1">{{ schedule.notes }}</span>
                             </p>
+                        {% else %}
+                            <p class="text-gray-600 text-base">No notes</p>
                         {% endif %}
                     </div>
                 {% endfor %}

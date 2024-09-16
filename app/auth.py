@@ -11,7 +11,7 @@ from flask import (
     current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-from app.db import get_db
+from app.db import get_db, close_db
 from app.user import index
 from . import *
 from flask_mail import Message
@@ -134,9 +134,9 @@ def login():
         user = db.execute("SELECT * FROM user WHERE email = ?", (email,)).fetchone()
 
         if user is None:
-            error = "Email don't exist."
+            error = "Email or Password is incorrect."
         elif not check_password_hash(user["password"], password):
-            error = "Incorrect password."
+            error = "Email or Password is incorrect."
 
         if error is None:
             session.clear()
@@ -146,6 +146,101 @@ def login():
         flash(error, "danger")
 
     return render_template("auth/login.html")
+
+
+@bp.route("/reset", methods=("POST", "GET"))
+def reset_password_request():
+    if request.method == "POST":
+        email = request.form.get("email")
+        db = get_db()
+        error = None
+        if not email:
+            error = "Email is required."
+
+        if error is None:
+            user = db.execute("SELECT * FROM user WHERE email = ?", (email,)).fetchone()
+            if user is None:
+                error = "Email is not registered."
+            else:
+                token = s.dumps(email, salt="reset-password")
+                msg = Message(
+                    "Reset Password - City Explorer",
+                    recipients=[email],
+                )
+                link = url_for(
+                    "auth.reset_password", token=token, _id=user["id"], _external=True
+                )
+                msg.body = f"Hi {user['firstname']}\nPlease click the link to reset your password: {link}"
+                try:
+                    mail.send(msg)
+                    flash(
+                        "A password reset link has been sent to your email address!",
+                        "success",
+                    )
+                except Exception as e:
+                    flash(f"Failed to send email. Error: {e}", "danger")
+
+                return redirect(url_for("auth.reset_password_request"))
+            flash(error, "danger")
+    return render_template("auth/reset_password_request.html")
+
+
+class PasswordForm(Form):
+    password = PasswordField(
+        "New Password",
+        [
+            validators.DataRequired(),
+            validators.EqualTo("confirm_password", message="Password must match"),
+        ],
+    )
+    confirm_password = PasswordField("Repeat Password")
+
+
+@bp.route("/reset/<token>/<_id>", methods=("GET", "POST"))
+def reset_password(token, _id):
+    db = get_db()
+    user = db.execute("SELECT * FROM user WHERE id = ?", (_id,)).fetchone()
+    try:
+        # Decode the token to get the email
+        email = s.loads(token, salt="reset-password", max_age=3600)
+    except Exception:
+        flash("The reset link is invalid or has expired.", "danger")
+        return redirect(url_for("auth.reset_password_request"))
+
+    # Retrieve the user by ID and verify the email matches
+
+    if user is None or user["email"] != email:
+        flash("Invalid reset request.", "danger")
+        return redirect(url_for("auth.reset_password_request"))
+
+    return render_template("auth/reset_password.html", user=user)
+
+
+@bp.route("/save/password/<id>", methods=("GET", "POST"))
+def save_password(id):
+
+    form = PasswordForm(request.form)
+    db = get_db()
+    if request.method == "POST" and form.validate():
+        new_password = request.form.get("password")
+        if not new_password:
+            flash("Password is required.", "danger")
+        else:
+            db.execute(
+                "UPDATE user SET password = ? WHERE id = ?",
+                (generate_password_hash(new_password), id),
+            )
+            db.commit()
+            close_db(db)
+            flash("Your password has been reset successfully!", "success")
+            return redirect(url_for("auth.login"))
+
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {getattr(form, field).label.text}: {error}", "danger")
+
+    return render_template("auth/reset_password.html", form=form)
 
 
 @bp.before_app_request

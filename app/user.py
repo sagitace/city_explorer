@@ -194,10 +194,10 @@ def index():
                     # Handle the case where the date format is not as expected
                     schedule["date"] = "Invalid Date"
 
-            if "notes" in schedule and schedule["notes"]:
-                words = schedule["notes"].split()
-                if len(words) > 5:
-                    schedule["notes"] = " ".join(words[:5]) + "..."
+            # if "notes" in schedule and schedule["notes"]:
+            #     words = schedule["notes"].split()
+            #     if len(words) > 5:
+            #         schedule["notes"] = " ".join(words[:5]) + "..."
 
         close_db()
         print(places)
@@ -790,6 +790,7 @@ def add_to_plans():
         if request.method == "POST":
             fsq_id = request.form["fsq_id"]
             place_name = request.form["place_name"]
+            category = request.form["category"]
             address = request.form["address"]
             region = request.form["region"]
             date = request.form["visit-date"]
@@ -797,8 +798,17 @@ def add_to_plans():
 
             db = get_db()
             db.execute(
-                "INSERT INTO plans (user_id, fsq_id, place_name, address, region, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (g.user["id"], fsq_id, place_name, address, region, date, notes),
+                "INSERT INTO plans (user_id, fsq_id, place_name, category, address, region, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    g.user["id"],
+                    fsq_id,
+                    place_name,
+                    category,
+                    address,
+                    region,
+                    date,
+                    notes,
+                ),
             )
             db.commit()
 
@@ -837,10 +847,14 @@ def schedules():
         visited = []
         missed = []
         cancelled = []
+        todaydate = datetime.now().strftime("%Y-%m-%d")
 
         for schedule in schedules:
 
-            if schedule["date"] < datetime.now().strftime("%Y-%m-%d"):
+            if (
+                schedule["date"] < datetime.now().strftime("%Y-%m-%d")
+                and schedule["status"] == "upcoming"
+            ):
                 # update status 'missed'
                 db.execute(
                     "UPDATE plans SET status = ? WHERE id = ?",
@@ -850,10 +864,10 @@ def schedules():
 
             schedule_dict = dict(schedule)
 
-            if schedule["address"]:
-                words = schedule_dict["address"].split()
-                if len(words) > 4:
-                    schedule_dict["address"] = " ".join(words[:5]) + "..."
+            # if schedule["address"]:
+            #     words = schedule_dict["address"].split()
+            #     if len(words) > 4:
+            #         schedule_dict["address"] = " ".join(words[:5]) + "..."
 
             fsq_id = schedule_dict["fsq_id"]
             params = {"fields": "categories"}
@@ -861,24 +875,6 @@ def schedules():
                 "accept": "application/json",
                 "Authorization": FOURSQUARE_API_KEY,
             }
-
-            # get the categories using foursquare_api_details
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    FOURSQUARE_API_DETAILS.format(fsq_id=fsq_id),
-                    params=params,
-                    headers=headers,
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        schedule_dict["categories"] = data["categories"]
-                    else:
-                        print(f"Error: {response.status} - {await response.text()}")
-
-            response = requests.get(
-                f"https://api.foursquare.com/v3/places/{fsq_id}", params=params
-            )
-            data = response.json()
 
             # Format date into day and month
             schedule_dict["day"] = datetime.strptime(
@@ -907,6 +903,7 @@ def schedules():
             upcoming=upcoming,
             visited=visited,
             missed=missed,
+            todaydate=todaydate,
             cancelled=cancelled,
         )
 
