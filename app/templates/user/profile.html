@@ -21,6 +21,31 @@
                             </button>
                         </div>
                     </div>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                <div class="container mt-3">
+                                {% for category, message in messages %}
+                                    {% if category == 'warning' %}
+                                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'success' %}
+                                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'danger' %}
+                                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
 
                     <!-- Main modal -->
                     <div id="readProductModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full bg-black bg-opacity-70">
@@ -41,7 +66,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <form action="{{url_for('user.update_character')}}" method="POST">
+                                    <form action="{{url_for('profile.update_character')}}" method="POST">
                                         <div>
                                             <div class="grid max-sm:grid-cols-2 sm:grid-cols-4 gap-2 items-center justify-center">
                                                 <div class="flex justify-center">
@@ -82,7 +107,7 @@
                         </div>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" action="{{url_for('profile.index')}}">
                         <div class="items-center mt-8 sm:mt-14 text-[#202142]">
 
                             <div

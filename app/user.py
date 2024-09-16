@@ -17,6 +17,7 @@ import functools  # for database .fetchone() method
 from datetime import datetime
 from flask_mail import Message
 from . import *
+from .models import *
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -690,93 +691,6 @@ def liked():
             items_end=items_end,
             items_per_page=items_per_page,
         )
-
-    return asyncio.run(inner())
-
-
-@bp.route("/profile", methods=("GET", "POST"))
-def profile():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        if request.method == "POST":
-            firstname = request.form["firstname"]
-            lastname = request.form["lastname"]
-            email = request.form["email"]
-            province = request.form["province"]
-
-            error = None
-
-            if not firstname:
-                error = "First name is required."
-            elif not lastname:
-                error = "Last name is required."
-            elif not email:
-                error = "Email is required."
-            elif not province:
-                error = "Province is required."
-
-            if error is None:
-                db = get_db()
-                db.execute(
-                    "UPDATE user SET firstname = ?, lastname = ?, province = ?, email = ?"
-                    " WHERE id = ?",
-                    (firstname, lastname, province, email, g.user["id"]),
-                )
-                db.commit()
-                return redirect(url_for("user.profile"))
-
-            flash(error)
-            return render_template("user/profile.html", user=g.user)
-        try:
-            json_file_path = os.path.join(
-                current_app.static_folder,
-                "philippine_provinces_cities_municipalities_and_barangays_2019v2.json",
-            )
-            with open(json_file_path) as myjsonfile:
-                mydata = json.load(myjsonfile)
-        except FileNotFoundError:
-            flash("Data file not found.", "danger")
-            mydata = []
-        provinces = set()
-        for region_key, region_value in mydata.items():
-            if "province_list" in region_value:
-                for province_key in region_value["province_list"].keys():
-                    provinces.add(province_key)
-
-        # Convert the set to a sorted list
-        provinces_list = sorted(list(provinces))
-
-        return render_template("user/profile.html", data=provinces_list)
-
-    return asyncio.run(inner())
-
-
-@bp.route("/update/character", methods=("GET", "POST"))
-def update_character():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        if request.method == "POST":
-            character = request.form["character"]
-            error = None
-            if not character:
-                error = "You need to choose character"
-
-            if error is None:
-                db = get_db()
-                db.execute(
-                    "UPDATE user SET character = ?" " WHERE id = ?",
-                    (character, g.user["id"]),
-                )
-                db.commit()
-                return redirect(url_for("user.profile"))
-
-            flash(error)
-            return render_template("user/profile.html", user=g.user)
-        return render_template("user/profile.html")
 
     return asyncio.run(inner())
 
