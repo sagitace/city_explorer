@@ -131,39 +131,43 @@ def mark_visited(id):
 
     @login_required
     async def inner():
-        db = get_db()
-        plan = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
-            (g.user["id"], id),
-        ).fetchone()
 
         try:
             # update status into visited
-            db.execute(
-                "UPDATE plans SET status = 'visited' WHERE user_id = ? AND id = ?",
-                (g.user["id"], id),
-            )
-            db.commit()
-        except db.IntegrityError:
-            pass
+            plan = Plans.query.get(id)
+            if plan:
+                plan.status = "visited"
+                db.session.commit()
 
-        visited = db.execute(
-            "SELECT * FROM visited WHERE user_id = ? AND fsq_id = ?",
-            (g.user["id"], plan["fsq_id"]),
-        ).fetchall()
-
-        if not visited:
-            try:
-                db.execute(
-                    "INSERT INTO visited (user_id, fsq_id) VALUES (?, ?)",
-                    (g.user["id"], plan["fsq_id"]),
+                # check if the plan is already visited in the visited table
+                visited = (
+                    db.session.query(Visited)
+                    .filter_by(user_id=g.user.id, fsq_id=plan.fsq_id)
+                    .all()
                 )
-                db.commit()
+                if not visited:
+                    try:
+                        new_visited = Visited(
+                            user_id=g.user.id,
+                            fsq_id=plan.fsq_id,
+                        )
+                        db.session.add(new_visited)
+                        db.session.commit()
+                    except IntegrityError:
+                        db.session.rollback()
+                        flash("Place already in visited")
 
-            except db.IntegrityError:
-                pass
+                flash(
+                    f"Hope you like {plan.place_name}! Explore more places!", "success"
+                )
+            else:
+                flash("Schedule not found.", "danger")
 
-        close_db(db)
+        except IntegrityError:
+            db.session.rollback()
+            flash("An error occurred while updating the schedule.", "danger")
+        except Exception as e:
+            flash(f"An error occured: {str(e)}", "danger")
 
         return redirect(request.referrer)
 
@@ -176,13 +180,6 @@ def mark_cancel(id):
 
     @login_required
     async def inner():
-        # db = get_db()
-
-        # plan = db.execute(
-        #     "SELECT * FROM plans WHERE user_id = ? AND id = ?",
-        #     (g.user["id"], id),
-        # ).fetchone()
-
         try:
             # update status into visited
             plan = Plans.query.get(id)
@@ -195,7 +192,7 @@ def mark_cancel(id):
 
         except IntegrityError:
             db.session.rollback()
-            flash("An error occurred while updating the character.", "danger")
+            flash("An error occurred while updating the schedule.", "danger")
         except Exception as e:
             flash(f"An error occured: {str(e)}", "danger")
 

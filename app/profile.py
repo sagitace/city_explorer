@@ -8,7 +8,14 @@ from flask import (
     url_for,
     current_app,
 )
-from wtforms import Form, StringField, PasswordField, validators, ValidationError
+from wtforms import (
+    Form,
+    StringField,
+    PasswordField,
+    validators,
+    ValidationError,
+    EmailField,
+)
 from wtforms.validators import DataRequired
 from sqlalchemy.exc import IntegrityError
 from .models import *
@@ -26,7 +33,14 @@ class ValidateForm(Form):
     firstname = StringField("firstname", [validators.Length(min=3, max=35)])
     lastname = StringField("lastname", [validators.Length(min=3, max=35)])
     province = StringField("province", [validators.Length(min=4)])
-    email = StringField("email", [validators.Length(min=6, max=35)])
+    email = EmailField(
+        "Email Address",
+        [
+            validators.Length(min=6, max=35),
+            validators.DataRequired(),
+            validators.Email(),
+        ],
+    )
 
 
 @bp.route("/", methods=("GET", "POST"))

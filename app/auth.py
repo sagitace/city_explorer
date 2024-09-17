@@ -72,7 +72,7 @@ def register():
             try:
                 mail.send(msg)
                 flash(
-                    "A verification email has been sent to your email address!",
+                    "A verification email has been sent to your email address! It is valid for 1 hour. Please check your email to proceed.",
                     "info",
                 )
             except Exception as e:
@@ -178,7 +178,7 @@ def reset_password_request():
                 try:
                     mail.send(msg)
                     flash(
-                        "A password reset link has been sent to your email address!",
+                        "A password reset link has been sent to your email address. It is valid for 1 hour. Please check your email to proceed.",
                         "success",
                     )
                 except Exception as e:
@@ -222,6 +222,7 @@ def reset_password(token, _id):
 @bp.route("/save/password/<id>", methods=("GET", "POST"))
 def save_password(id):
     form = PasswordForm(request.form)
+    user = User.query.get(id)
     if request.method == "POST" and form.validate():
         new_password = request.form.get("password")
         if not new_password:
@@ -240,7 +241,7 @@ def save_password(id):
             for error in errors:
                 flash(f"Error in {getattr(form, field).label.text}: {error}", "danger")
 
-    return render_template("auth/reset_password.html", form=form)
+    return render_template("auth/reset_password.html", form=form, user=user)
 
 
 # Load logged-in user

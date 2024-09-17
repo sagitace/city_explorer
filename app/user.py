@@ -158,6 +158,7 @@ def index():
 
     @login_required
     async def inner():
+
         user_id = g.user.id
         # Query for visited places
         visited_query = (
@@ -186,7 +187,21 @@ def index():
             .where(Plans.user_id == user_id, Plans.status == "upcoming")
             .order_by(Plans.date.asc())
         )
+
         schedules = db.session.execute(schedules_query).all()
+
+        for row in schedules:
+            schedule = row[0]
+            if (
+                schedule.date < datetime.now().strftime("%Y-%m-%d")
+                and schedule.status == "upcoming"
+            ):
+                # update status 'missed'
+                plan = Plans.query.get(schedule.id)
+                # update status
+                plan.status = "missed"
+                # update db
+                db.session.commit()
 
         count_schedule = len(schedules)
 
@@ -310,7 +325,11 @@ def place_info(fsq_id):
         todaydate = datetime.now().strftime("%Y-%m-%d")
 
         get_plans = db.session.execute(
-            select(Plans).where(Plans.user_id == g.user.id, Plans.fsq_id == fsq_id)
+            select(Plans).where(
+                Plans.user_id == g.user.id,
+                Plans.fsq_id == fsq_id,
+                Plans.status == "upcoming",
+            )
         ).fetchone()
 
         get_plans_dict = []
