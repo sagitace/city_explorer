@@ -111,10 +111,12 @@ def create_app():
     from . import auth
     from . import user
     from . import profile
+    from . import schedule
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(user.bp)
     app.register_blueprint(profile.bp)
+    app.register_blueprint(schedule.bp)
 
     app.add_url_rule("/", endpoint="index")
 

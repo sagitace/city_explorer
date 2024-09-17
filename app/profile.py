@@ -15,6 +15,7 @@ from .models import *
 import json
 import os
 import asyncio
+from sqlalchemy import select, desc
 import aiohttp
 
 
@@ -63,8 +64,22 @@ def index():
                     provinces.add(province_key)
 
         provinces_list = sorted(list(provinces))
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == g.user.id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
+        schedules = db.session.execute(schedules_query).all()
 
-        return render_template("user/profile.html", data=provinces_list, form=form)
+        count_schedule = len(schedules)
+
+        return render_template(
+            "user/profile.html",
+            data=provinces_list,
+            form=form,
+            count_schedule=count_schedule,
+        )
 
     return asyncio.run(inner())
 

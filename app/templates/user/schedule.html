@@ -29,7 +29,34 @@
         </div>
 
         <!-- Appointment Content Sections -->
-        <div class="appointment-content mt-10">
+        <div class="mt-5">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="container mt-3">
+                    {% for category, message in messages %}
+                        {% if category == 'warning' %}
+                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 mb-4" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% elif category == 'success' %}
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-2 mb-4" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% elif category == 'danger' %}
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-2 mb-4" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% else %}
+                        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-2 mb-4" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="appointment-content mt-5">
             <div id="upcoming" class="appointment-section">
                 {% if upcoming %}
                     {% for up in upcoming %}
@@ -88,7 +115,7 @@
                                     </li>
 
                                     <li class="flex items-center">
-                                        <a href="{{url_for('user.mark_visited', id=up.id)}}" class="flex items-center px-4 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-300 w-full">
+                                        <a href="{{url_for('schedule.mark_visited', id=up.id)}}" class="flex items-center px-4 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors duration-300 w-full">
                                         <svg class="w-6 h-6 mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                         <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.707-1.293a1 1 0 0 0-1.414-1.414L11 12.586l-1.793-1.793a1 1 0 0 0-1.414 1.414l2.5 2.5a1 1 0 0 0 1.414 0l4-4Z" clip-rule="evenodd"/>
                                         </svg>
@@ -131,7 +158,7 @@
                                         </button>
                                     </div>
                                     <!-- Modal body -->
-                                    <form action="{{url_for('user.update_schedule', id=up.id)}}" method="POST">
+                                    <form action="{{url_for('schedule.update_schedule', id=up.id)}}" method="POST">
                                         <div class="grid gap-4 mb-4 sm:grid-cols-2">
                                             <div class="sm:col-span-2">
                                                 <label for="visit-date" class="block mb-2 text-sm font-medium text-gray-800 dark:text-white">Select Date</label>
@@ -171,7 +198,7 @@
                                         <button data-modal-toggle="cancelModal{{up.id}}" type="button" class="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
                                             No, cancel
                                         </button>
-                                        <a href="{{url_for('user.mark_cancel', id=up.id)}}" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">
+                                        <a href="{{url_for('schedule.mark_cancel', id=up.id)}}" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">
                                             Yes, I'm sure
                                         </a>
                                     </div>

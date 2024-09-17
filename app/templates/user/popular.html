@@ -40,7 +40,7 @@
             </div>
             <div class="w-full gap-2 mb-2 {% if places[0].weather.cod == 200 %}grid grid-cols-2{% endif %}">
                 <div class="{% if places[0].weather.cod == 200 %}max-lg:col-span-2{% endif %}">
-                    <h1 class="text-xl font-semibold w-full">Popular in {{ city|title }}</h1>
+                    <h1 class="text-xl font-normal w-full">Popular in <span class="font-semibold">{{city|title}}</span></h1>
                 </div>
                 <div class="flex lg:justify-end max-lg:col-span-2 gap-5">
                     {% if places[0].weather.cod == 200 %}
@@ -103,7 +103,7 @@
                                 </div>
                                 {% endif %}
                             </div>
-                            <h2 class="mb-1 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
+                            <h2 class="mb-1 mt-2 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
 
                             <div class="flex gap-1 justify-between mb-2">
                                 <div class="flex gap-1">

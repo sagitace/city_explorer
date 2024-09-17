@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore cities around the world with City Explorer. Discover places to visit, restaurants, landmarks, and more. Create your personalized travel plans and find popular destinations easily.">
     <title>{% block title %} {% endblock %}</title>
     <link rel="shortcut icon" href="{{url_for('static',filename='favicon.ico')}}" type="image/x-icon">
     <link rel="stylesheet" href="{{url_for('static',filename='dist/css/output.css')}}">
 </head>
-<body class="bg-slate-100">
+<body class="bg-slate-100 font-display">
     <nav class="bg-white border-gray-200 px-2 sm:px-4 py-2.5 rounded dark:bg-gray-900">
         <div class="container flex flex-wrap items-center justify-between mx-auto max-w-screen-lg py-1">
             <a href="/" class="flex items-center">
@@ -18,10 +19,10 @@
             <div class="flex md:order-2">
                 {% if g.user %}
                     <a type="button" href="{{ url_for('auth.logout') }}"
-                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0">Logout</a>
+                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0 tracking-wide">Logout</a>
                 {% else %}
                     <a type="button" href="{{ url_for('auth.login') }}"
-                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0">Login</a>
+                    class="text-white bg-[#1E2A5E] hover:bg-blue-900 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center mr-3 md:mr-0 tracking-wide">Login</a>
                 {% endif %}
                 
             </div>
