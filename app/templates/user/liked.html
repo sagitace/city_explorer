@@ -29,7 +29,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        <h2 class="mb-2 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
+                        <h2 class="mb-1 mt-2 text-lg font-bold tracking-tight text-gray-900">{{ place.name }}</h2>
 
                         <div class="flex gap-1 justify-between">
                             <div class="flex gap-1">
@@ -169,23 +169,31 @@
                                         </div>
                                     </div>
                                     <div class="mb-2 flex gap-2">
-                                        <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" target="_blank"><button class="text-white bg-indigo-600 hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center ">More Details</button></a>
+
+                                        <a href="{{url_for('user.place_info', fsq_id=place.fsq_id)}}" target="_blank">
+                                            <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">
+                                                More Details
+                                            </button>
+                                        </a>
+
                                         {% if place.visited %}
-                                            <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
-                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                                <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">Remove to visited</button>
-                                            </form>
+                                        <form action="{{ url_for('user.remove_to_visited') }}" method="POST">
+                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                            <button type="submit" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">
+                                                Remove from visited
+                                            </button>
+                                        </form>
                                         {% else %}
-                                            <form action="{{ url_for('user.add_to_visited') }}" method="POST">
-                                                <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
-                                                
-                                                <button type="submit" data-modal-target="popup-modal" data-modal-toggle="popup-modal" 
-                                                    class="py-2 px-5 text-sm font-semibold text-white bg-indigo-700 rounded-lg shadow-md hover:bg-indigo-800 hover:shadow-lg transition-all duration-300">
-                                                    Add to visited
-                                                </button>
-                                            </form>
+
+                                        <form action="{{ url_for('user.add_to_visited') }}" method="POST">
+                                            <input type="hidden" name="place_id" value="{{ place.fsq_id }}">
+                                            <button type="submit" class="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center">
+                                                Add to visited
+                                            </button>
+                                        </form>
                                         {% endif %}
                                     </div>
+
                             </div>
                         </div>
                     </div>
@@ -208,7 +216,7 @@
         
             <div class="inline-flex mt-2 xs:mt-0">
                 <!-- Previous Button -->
-                <a href="{{ url_for('user.visited', page=page-1) }}" {% if page <= 1 %} class='cursor-not-allowed opacity-80 disabled' disabled{% endif %}>
+                <a href="{{ url_for('user.liked', page=page-1) }}" {% if page <= 1 %} class='cursor-not-allowed opacity-80 disabled' disabled{% endif %}>
                     <button class="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-gray-800 rounded-s hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white {% if page <= 1 %} cursor-not-allowed opacity-50 disabled {% endif %}" {% if page <= 1 %} disabled {% endif %}>
                     <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
@@ -218,7 +226,7 @@
                 </a>
 
                 <!-- Next Button -->
-                <a href="{{ url_for('user.visited', page=page+1) }}" {% if page >= total_pages %} class="cursor-not-allowed opacity-80" disabled{% endif %}>
+                <a href="{{ url_for('user.liked', page=page+1) }}" {% if page >= total_pages %} class="cursor-not-allowed opacity-80" disabled{% endif %}>
                     <button class="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-gray-800 border-0 border-s border-gray-700 rounded-e hover:bg-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white {% if page >= total_pages %} cursor-not-allowed opacity-50{% endif %}" {% if page >= total_pages %} disabled {% endif %} >
                     Next
                     <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">

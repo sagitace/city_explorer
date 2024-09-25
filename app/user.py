@@ -9,14 +9,16 @@ from flask import (
     current_app,
 )
 from werkzeug.exceptions import abort
-from app.db import get_db, close_db
 import requests
 import asyncio, aiohttp, json, os
 import random  # for default location
-import functools  # for database .fetchone() method
+import functools  # for database .fetchone() and other methods
 from datetime import datetime
+from sqlalchemy import select, desc
+from sqlalchemy.exc import IntegrityError
 from flask_mail import Message
 from . import *
+from .models import *
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -25,6 +27,7 @@ FOURSQUARE_API_KEY = "fsq3XflsHeDs8cP703mPhp/K64ZuJYHFra2NGkn+SmjbPZM="
 FOURSQUARE_API_PHOTOS_URL = "https://api.foursquare.com/v3/places/{fsq_id}/photos"
 FOURSQUARE_API_TIPS = "https://api.foursquare.com/v3/places/{fsq_id}/tips"
 FOURSQUARE_API_DETAILS = "https://api.foursquare.com/v3/places/{fsq_id}"
+
 OPENWEATHERMAP_API_KEY = "3495e8b531e0caf889157008e17fcca6"
 
 
@@ -99,17 +102,18 @@ async def get_places_data(city, categories):
                     fsq_id = place.get("fsq_id")
 
                     # Check if the place has been visited by the user
-                    db = get_db()
-                    visited_row = db.execute(
-                        "SELECT 1 FROM visited WHERE fsq_id = ? AND user_id = ?",
-                        (fsq_id, g.user["id"]),
+                    visited_row = db.session.execute(
+                        select(Visited)
+                        .where(Visited.fsq_id == fsq_id)
+                        .where(Visited.user_id == g.user.id)
                     ).fetchone()
                     place_dict["visited"] = bool(visited_row)
 
                     # Check if the place has been liked by the user
-                    liked_row = db.execute(
-                        "SELECT 1 FROM liked WHERE fsq_id = ? AND user_id = ?",
-                        (fsq_id, g.user["id"]),
+                    liked_row = db.session.execute(
+                        select(Liked)
+                        .where(Liked.fsq_id == fsq_id)
+                        .where(Liked.user_id == g.user.id)
                     ).fetchone()
                     place_dict["liked"] = bool(liked_row)
 
@@ -155,18 +159,20 @@ def index():
 
     @login_required
     async def inner():
-        db = get_db()
 
-        visited = db.execute(
-            "SELECT fsq_id FROM visited WHERE user_id = ? ORDER BY created DESC",
-            (g.user["id"],),
-        ).fetchall()
-        likes = db.execute(
-            "SELECT fsq_id FROM liked WHERE user_id = ?",
-            (g.user["id"],),
-        ).fetchall()
+        user_id = g.user.id
+        # Query for visited places
+        visited_query = (
+            select(Visited)
+            .where(Visited.user_id == user_id)
+            .order_by(desc(Visited.created))
+        )
+        visited = db.session.execute(visited_query).scalars().all()
+        # Query for liked places
+        likes_query = select(Liked.fsq_id).where(Liked.user_id == user_id)
+        likes = db.session.execute(likes_query).scalars().all()
 
-        city = g.user["province"]
+        city = g.user.province
         categories = "12000,19000,16000,17000,10000,13000"
         places = await get_places_data(city, categories)
         myvisited = await get_visited_places_data(visited)
@@ -176,31 +182,58 @@ def index():
 
         today = datetime.now().strftime("%b %d, %Y")
 
-        schedules = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND status = 'upcoming' ORDER BY date ASC",
-            (g.user["id"],),
-        ).fetchall()
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == user_id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
 
-        # Convert schedules from sqlite3.Row to dictionaries and limit to 2 schedules
-        schedules = [dict(schedule) for schedule in schedules[:2]]
+        schedules = db.session.execute(schedules_query).all()
+        
+        getSchedules = db.session.execute(
+            db.select(Plans).where(Plans.user_id == g.user.id).order_by(Plans.date)
+        ).scalars()
+                
+        for schedule in getSchedules:
+            if (
+                schedule.date < datetime.now().strftime("%Y-%m-%d")
+                and schedule.status == "upcoming"
+            ):
+                # update status 'missed'
+                plan = Plans.query.get(schedule.id)
+                # update status
+                plan.status = "missed"
+                # update db
+                db.session.commit()
 
-        # Format the date in each schedule
-        for schedule in schedules:
-            if "date" in schedule and schedule["date"]:
+        count_schedule = len(schedules)
+
+        # limit to 2
+        schedules = [schedule for schedule in schedules[:2]]
+
+        schedules_list = []
+        for row in schedules:
+            schedule = row[0]  # Access the Plans object
+            schedule_dict = {
+                "id": schedule.id,
+                "place_name": schedule.place_name,
+                "user_id": schedule.user_id,
+                "status": schedule.status,
+                "notes": schedule.notes,
+                "date": None,
+            }
+
+            # Format the date if it's available
+            if schedule.date:
                 try:
-                    date_obj = datetime.strptime(schedule["date"], "%Y-%m-%d")
-                    schedule["date"] = date_obj.strftime("%b %d, %Y")
+                    date_obj = datetime.strptime(str(schedule.date), "%Y-%m-%d")
+                    schedule_dict["date"] = date_obj.strftime("%b %d, %Y")
                 except ValueError:
-                    # Handle the case where the date format is not as expected
-                    schedule["date"] = "Invalid Date"
+                    schedule_dict["date"] = "Invalid Date"
 
-            # if "notes" in schedule and schedule["notes"]:
-            #     words = schedule["notes"].split()
-            #     if len(words) > 5:
-            #         schedule["notes"] = " ".join(words[:5]) + "..."
+            schedules_list.append(schedule_dict)
 
-        close_db()
-        print(places)
         if places:
             return render_template(
                 "user/index.html",
@@ -210,12 +243,12 @@ def index():
                 likes=likes,
                 myvisited=myvisited,
                 unvisited_places=unvisited_places,
-                schedules=schedules,
+                schedules=schedules_list,
                 today=today,
+                count_schedule=count_schedule,
             )
         else:
             return "Error: Failed to fetch places data."
-        # return render_template('user/index.html')
 
     return asyncio.run(inner())
 
@@ -227,6 +260,16 @@ def popular():
     @login_required
     async def inner(city=None, categories=None):
 
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == g.user.id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
+        schedules = db.session.execute(schedules_query).all()
+
+        count_schedule = len(schedules)
+
         if request.method == "POST":
             city = request.form.get("city", "Philippines")
             categories = request.form.get("category")
@@ -234,13 +277,17 @@ def popular():
 
             if places:
                 return render_template(
-                    "user/popular.html", places=places, city=city, categories=categories
+                    "user/popular.html",
+                    places=places,
+                    city=city,
+                    categories=categories,
+                    count_schedule=count_schedule,
                 )
             else:
                 return "Error: Failed to fetch places data."
         else:
 
-            city = g.user["province"]
+            city = g.user.province
             categories = categories or request.args.get(
                 "categories", "12000,19000,16000,17000,10000,13000"
             )
@@ -249,7 +296,11 @@ def popular():
             print(city)
             if places:
                 return render_template(
-                    "user/popular.html", places=places, city=city, categories=categories
+                    "user/popular.html",
+                    places=places,
+                    city=city,
+                    categories=categories,
+                    count_schedule=count_schedule,
                 )
             else:
                 return "Error: Failed to fetch places data."
@@ -263,21 +314,46 @@ def place_info(fsq_id):
 
     @login_required
     async def inner():
+
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == g.user.id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
+        schedules = db.session.execute(schedules_query).all()
+
+        count_schedule = len(schedules)
+
         place = await get_place_data(fsq_id)
         todaydate = datetime.now().strftime("%Y-%m-%d")
-        db = get_db()
-        get_plans = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND fsq_id = ?",
-            (g.user["id"], fsq_id),
+
+        get_plans = db.session.execute(
+            select(Plans).where(
+                Plans.user_id == g.user.id,
+                Plans.fsq_id == fsq_id,
+                Plans.status == "upcoming",
+            )
         ).fetchone()
 
-        # format plan date
-        if get_plans:
-            get_plans_dict = dict(get_plans)  # Convert to dictionary
+        get_plans_dict = []
 
-            if get_plans_dict.get("date"):
+        if get_plans:
+            # Use _mapping to convert row to a dictionary-like object
+            plan = get_plans[0]
+            get_plans_dict = {
+                "id": plan.id,
+                "place_name": plan.place_name,
+                "user_id": plan.user_id,
+                "status": plan.status,
+                "notes": plan.notes,
+                "date": plan.date,
+            }
+
+            # Check and format the date if it exists
+            if plan.date:
                 try:
-                    date_obj = datetime.strptime(get_plans_dict["date"], "%Y-%m-%d")
+                    date_obj = datetime.strptime(plan.date, "%Y-%m-%d")
                     get_plans_dict["formatted_date"] = date_obj.strftime("%B %d, %Y")
                 except ValueError:
                     get_plans_dict["formatted_date"] = "Invalid Date"
@@ -291,6 +367,7 @@ def place_info(fsq_id):
                 place=place,
                 todaydate=todaydate,
                 plans=get_plans_dict,
+                count_schedule=count_schedule,
             )
         else:
             return "Error: Failed to fetch place data."
@@ -303,8 +380,6 @@ def place_info(fsq_id):
 async def get_place_data(fsq_id):
     headers = {"accept": "application/json", "Authorization": FOURSQUARE_API_KEY}
     params = {"fields": "fsq_id,categories,geocodes,location,name,related_places"}
-
-    db = get_db()
 
     # Initialize a dictionary to store the details of the place
     place_details = {}
@@ -320,18 +395,20 @@ async def get_place_data(fsq_id):
                 # Add basic details to the dictionary
                 place_details = details
 
-                visited_row = db.execute(
-                    "SELECT 1 FROM visited WHERE fsq_id = ? AND user_id = ?",
-                    (fsq_id, g.user["id"]),
+                # Check if the place has been visited by the user
+                visited_row = db.session.execute(
+                    select(Visited)
+                    .where(Visited.fsq_id == fsq_id)
+                    .where(Visited.user_id == g.user.id)
                 ).fetchone()
-
                 place_details["visited"] = bool(visited_row)
 
-                liked_row = db.execute(
-                    "SELECT 1 FROM liked WHERE fsq_id = ? AND user_id = ?",
-                    (fsq_id, g.user["id"]),
+                # Check if the place has been liked by the user
+                liked_row = db.session.execute(
+                    select(Liked)
+                    .where(Liked.fsq_id == fsq_id)
+                    .where(Liked.user_id == g.user.id)
                 ).fetchone()
-
                 place_details["liked"] = bool(liked_row)
 
                 lat = details.get("geocodes", {}).get("main", {}).get("latitude")
@@ -433,7 +510,7 @@ def add_to_visited():
     @login_required
     async def inner():
         if request.method == "POST":
-            fsq_id = request.form["place_id"]
+            fsq_id = request.form.get("place_id")
             error = None
 
             if not fsq_id:
@@ -441,13 +518,12 @@ def add_to_visited():
 
             if error is None:
                 try:
-                    db = get_db()
-                    db.execute(
-                        "INSERT INTO visited (fsq_id, user_id) VALUES (?, ?)",
-                        (fsq_id, g.user["id"]),
-                    )
-                    db.commit()
-                except db.IntegrityError:
+                    visited = Visited(fsq_id=fsq_id, user_id=g.user.id)
+                    db.session.add(visited)
+                    db.session.commit()
+
+                except IntegrityError:
+                    db.session.rollback()
                     error = f"The place is already in your visited list."
                 else:
                     return redirect(url_for("user.place_info", fsq_id=fsq_id))
@@ -464,14 +540,30 @@ def remove_to_visited():
     @login_required
     async def inner():
         if request.method == "POST":
-            fsq_id = request.form["place_id"]
+            fsq_id = request.form.get("place_id")
+            error = None
 
-            db = get_db()
-            db.execute(
-                "DELETE FROM visited WHERE fsq_id = ? AND user_id = ?",
-                (fsq_id, g.user["id"]),
-            )
-            db.commit()
+            if not fsq_id:
+                error = "Error while unliking the place. Please try again."
+            if error is None:
+                try:
+                    visited = (
+                        db.session.query(Visited)
+                        .filter_by(fsq_id=fsq_id, user_id=g.user.id)
+                        .first()
+                    )
+                    if visited:
+                        db.session.delete(visited)
+                        db.session.commit()
+                    else:
+                        error = "You don't have this place in your visited list."
+
+                except IntegrityError:
+                    db.session.rollback()
+                    error = "The place is already in your unvisited list."
+                else:
+                    return redirect(request.referrer)
+            flash(error, "danger")
 
             return redirect(request.referrer)
 
@@ -485,14 +577,23 @@ def add_to_liked():
     @login_required
     async def inner():
         if request.method == "POST":
-            fsq_id = request.form["place_id"]
+            fsq_id = request.form.get("place_id")
+            error = None
+            if not fsq_id:
+                error = "Error while liking the place. Please try again."
+            if error is None:
+                try:
+                    liked = Liked(fsq_id=fsq_id, user_id=g.user.id)
+                    db.session.add(liked)
+                    db.session.commit()
 
-            db = get_db()
-            db.execute(
-                "INSERT INTO liked (fsq_id, user_id) VALUES (?, ?)",
-                (fsq_id, g.user["id"]),
-            )
-            db.commit()
+                except IntegrityError:
+                    db.session.rollback()
+                    error = "The place is already in your liked list."
+                else:
+                    return redirect(request.referrer)
+
+            flash(error, "danger")
 
             return redirect(request.referrer)
 
@@ -506,14 +607,30 @@ def remove_to_liked():
     @login_required
     async def inner():
         if request.method == "POST":
-            fsq_id = request.form["place_id"]
+            fsq_id = request.form.get("place_id")
+            error = None
 
-            db = get_db()
-            db.execute(
-                "DELETE FROM liked WHERE fsq_id = ? AND user_id = ?",
-                (fsq_id, g.user["id"]),
-            )
-            db.commit()
+            if not fsq_id:
+                error = "Error while unliking the place. Please try again."
+            if error is None:
+                try:
+                    liked = (
+                        db.session.query(Liked)
+                        .filter_by(fsq_id=fsq_id, user_id=g.user.id)
+                        .first()
+                    )
+                    if liked:
+                        db.session.delete(liked)
+                        db.session.commit()
+                    else:
+                        error = "You don't have this place in your liked list."
+
+                except IntegrityError:
+
+                    error = "The place is already in your unliked list."
+                else:
+                    return redirect(request.referrer)
+            flash(error, "danger")
 
             return redirect(request.referrer)
 
@@ -523,13 +640,18 @@ def remove_to_liked():
 async def get_visited_places_data(fsq_id):
     headers = {"accept": "application/json", "Authorization": FOURSQUARE_API_KEY}
     params = {"fields": "fsq_id,categories,geocodes,location,name"}
-    db = get_db()
+
     places_details = []  # store the details of each place
 
     async with aiohttp.ClientSession() as session:
         tasks = []
+        place_dict = []
+
         for place in fsq_id:
-            place_dict = dict(place)  # Convert place to a dictionary
+            # Convert place to a dictionary
+            place_dict = {
+                "fsq_id": place.fsq_id,
+            }
             fsq_id = place_dict["fsq_id"]
 
             details_url = FOURSQUARE_API_DETAILS.format(fsq_id=fsq_id)
@@ -555,19 +677,19 @@ async def fetch_place_details(session, details_url, params, headers, place_dict,
             fsq_id = place_dict["fsq_id"]
 
             # Check if the place has been visited by the user
-            visited_row = db.execute(
-                "SELECT 1 FROM visited WHERE fsq_id = ? AND user_id = ?",
-                (fsq_id, g.user["id"]),
+            visited_row = db.session.execute(
+                select(Visited)
+                .where(Visited.fsq_id == fsq_id)
+                .where(Visited.user_id == g.user.id)
             ).fetchone()
-
             place_dict["visited"] = bool(visited_row)
 
             # Check if the place has been liked by the user
-            liked_row = db.execute(
-                "SELECT 1 FROM liked WHERE fsq_id = ? AND user_id = ?",
-                (fsq_id, g.user["id"]),
+            liked_row = db.session.execute(
+                select(Liked)
+                .where(Liked.fsq_id == fsq_id)
+                .where(Liked.user_id == g.user.id)
             ).fetchone()
-
             place_dict["liked"] = bool(liked_row)
 
             lat = place_dict.get("geocodes", {}).get("main", {}).get("latitude")
@@ -616,20 +738,29 @@ def visited():
 
     @login_required
     async def inner():
-        db = get_db()
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == g.user.id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
+        schedules = db.session.execute(schedules_query).all()
+
+        count_schedule = len(schedules)
 
         items_per_page = 6
         page = request.args.get("page", 1, type=int)
         offset = (page - 1) * items_per_page
 
-        visited = db.execute(
-            "SELECT fsq_id FROM visited WHERE user_id = ? ORDER BY created DESC LIMIT ? OFFSET ?",
-            (g.user["id"], items_per_page, offset),
-        ).fetchall()
+        visited = (
+            Visited.query.filter_by(user_id=g.user.id)
+            .order_by(Visited.created.desc())
+            .offset(offset)
+            .limit(items_per_page)
+            .all()
+        )
 
-        total_visited = db.execute(
-            "SELECT COUNT(*) FROM visited WHERE user_id = ?", (g.user["id"],)
-        ).fetchone()[0]
+        total_visited = Visited.query.filter_by(user_id=g.user.id).count()
 
         total_pages = (total_visited + items_per_page - 1) // items_per_page
         places = await get_visited_places_data(visited)
@@ -647,6 +778,7 @@ def visited():
             items_start=items_start,
             items_end=items_end,
             items_per_page=items_per_page,
+            count_schedule=count_schedule,
         )
 
     return asyncio.run(inner())
@@ -658,20 +790,29 @@ def liked():
 
     @login_required
     async def inner():
-        db = get_db()
+        # Query for schedules
+        schedules_query = (
+            select(Plans)
+            .where(Plans.user_id == g.user.id, Plans.status == "upcoming")
+            .order_by(Plans.date.asc())
+        )
+        schedules = db.session.execute(schedules_query).all()
+
+        count_schedule = len(schedules)
 
         items_per_page = 6
         page = request.args.get("page", 1, type=int)
         offset = (page - 1) * items_per_page
 
-        liked = db.execute(
-            "SELECT fsq_id FROM liked WHERE user_id = ? ORDER BY created DESC LIMIT ? OFFSET ?",
-            (g.user["id"], items_per_page, offset),
-        ).fetchall()
+        liked = (
+            Liked.query.filter_by(user_id=g.user.id)
+            .order_by(Liked.created.desc())
+            .offset(offset)
+            .limit(items_per_page)
+            .all()
+        )
 
-        total_likes = db.execute(
-            "SELECT COUNT(*) FROM liked WHERE user_id = ?", (g.user["id"],)
-        ).fetchone()[0]
+        total_likes = Liked.query.filter_by(user_id=g.user.id).count()
 
         total_pages = (total_likes + items_per_page - 1) // items_per_page
         places = await get_visited_places_data(liked)
@@ -689,333 +830,7 @@ def liked():
             items_start=items_start,
             items_end=items_end,
             items_per_page=items_per_page,
+            count_schedule=count_schedule,
         )
-
-    return asyncio.run(inner())
-
-
-@bp.route("/profile", methods=("GET", "POST"))
-def profile():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        if request.method == "POST":
-            firstname = request.form["firstname"]
-            lastname = request.form["lastname"]
-            email = request.form["email"]
-            province = request.form["province"]
-
-            error = None
-
-            if not firstname:
-                error = "First name is required."
-            elif not lastname:
-                error = "Last name is required."
-            elif not email:
-                error = "Email is required."
-            elif not province:
-                error = "Province is required."
-
-            if error is None:
-                db = get_db()
-                db.execute(
-                    "UPDATE user SET firstname = ?, lastname = ?, province = ?, email = ?"
-                    " WHERE id = ?",
-                    (firstname, lastname, province, email, g.user["id"]),
-                )
-                db.commit()
-                return redirect(url_for("user.profile"))
-
-            flash(error)
-            return render_template("user/profile.html", user=g.user)
-        try:
-            json_file_path = os.path.join(
-                current_app.static_folder,
-                "philippine_provinces_cities_municipalities_and_barangays_2019v2.json",
-            )
-            with open(json_file_path) as myjsonfile:
-                mydata = json.load(myjsonfile)
-        except FileNotFoundError:
-            flash("Data file not found.", "danger")
-            mydata = []
-        provinces = set()
-        for region_key, region_value in mydata.items():
-            if "province_list" in region_value:
-                for province_key in region_value["province_list"].keys():
-                    provinces.add(province_key)
-
-        # Convert the set to a sorted list
-        provinces_list = sorted(list(provinces))
-
-        return render_template("user/profile.html", data=provinces_list)
-
-    return asyncio.run(inner())
-
-
-@bp.route("/update/character", methods=("GET", "POST"))
-def update_character():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        if request.method == "POST":
-            character = request.form["character"]
-            error = None
-            if not character:
-                error = "You need to choose character"
-
-            if error is None:
-                db = get_db()
-                db.execute(
-                    "UPDATE user SET character = ?" " WHERE id = ?",
-                    (character, g.user["id"]),
-                )
-                db.commit()
-                return redirect(url_for("user.profile"))
-
-            flash(error)
-            return render_template("user/profile.html", user=g.user)
-        return render_template("user/profile.html")
-
-    return asyncio.run(inner())
-
-
-@bp.route("/add_plans", methods=("GET", "POST"))
-def add_to_plans():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        if request.method == "POST":
-            fsq_id = request.form["fsq_id"]
-            place_name = request.form["place_name"]
-            category = request.form["category"]
-            address = request.form["address"]
-            region = request.form["region"]
-            date = request.form["visit-date"]
-            notes = request.form["notes"]
-
-            db = get_db()
-            db.execute(
-                "INSERT INTO plans (user_id, fsq_id, place_name, category, address, region, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    g.user["id"],
-                    fsq_id,
-                    place_name,
-                    category,
-                    address,
-                    region,
-                    date,
-                    notes,
-                ),
-            )
-            db.commit()
-
-            # format date
-            date = datetime.strptime(date, "%Y-%m-%d").strftime("%B %d, %Y")
-
-            # send mail
-            msg = Message(
-                subject="Your Visit Has Been Scheduled - City Explorer",
-                recipients=[g.user["email"]],
-            )
-            link = url_for("user.schedules", _external=True)
-            msg.body = f"Hi {g.user['firstname']},\n\nYour visit at {place_name} has been successfully scheduled!\n\nVisit Date: {date}\nAddress: {address}\nNotes: {notes}\nView all your schedules here: {link}\n\nWe look forward to seeing you there! Thank you for choosing City Explorer, and we hope you have an amazing experience discovering new places!\n\nBest regards,\nCity Explorer Team"
-
-            mail.send(msg)
-
-            return redirect(request.referrer)
-
-    return asyncio.run(inner())
-
-
-@bp.route("/schedules", methods=("GET", "POST"))
-def schedules():
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        db = get_db()
-
-        schedules = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? ORDER BY date ASC",
-            (g.user["id"],),
-        ).fetchall()
-
-        upcoming = []
-        visited = []
-        missed = []
-        cancelled = []
-        todaydate = datetime.now().strftime("%Y-%m-%d")
-
-        for schedule in schedules:
-
-            if (
-                schedule["date"] < datetime.now().strftime("%Y-%m-%d")
-                and schedule["status"] == "upcoming"
-            ):
-                # update status 'missed'
-                db.execute(
-                    "UPDATE plans SET status = ? WHERE id = ?",
-                    ("missed", schedule["id"]),
-                )
-                db.commit()
-
-            schedule_dict = dict(schedule)
-
-            # if schedule["address"]:
-            #     words = schedule_dict["address"].split()
-            #     if len(words) > 4:
-            #         schedule_dict["address"] = " ".join(words[:5]) + "..."
-
-            fsq_id = schedule_dict["fsq_id"]
-            params = {"fields": "categories"}
-            headers = {
-                "accept": "application/json",
-                "Authorization": FOURSQUARE_API_KEY,
-            }
-
-            # Format date into day and month
-            schedule_dict["day"] = datetime.strptime(
-                schedule_dict["date"], "%Y-%m-%d"
-            ).strftime("%d")
-            schedule_dict["month"] = datetime.strptime(
-                schedule_dict["date"], "%Y-%m-%d"
-            ).strftime("%b")
-
-            if schedule_dict["status"] == "upcoming":
-                upcoming.append(schedule_dict)
-            elif schedule_dict["status"] == "visited":
-                visited.append(schedule_dict)
-            elif schedule_dict["status"] == "missed":
-                missed.append(schedule_dict)
-            elif schedule_dict["status"] == "cancelled":
-                cancelled.append(schedule_dict)
-
-        # sort
-        visited.sort(key=lambda x: x["date"], reverse=True)
-        missed.sort(key=lambda x: x["date"], reverse=True)
-
-        close_db(db)
-        return render_template(
-            "user/schedule.html",
-            upcoming=upcoming,
-            visited=visited,
-            missed=missed,
-            todaydate=todaydate,
-            cancelled=cancelled,
-        )
-
-    return asyncio.run(inner())
-
-
-@bp.route("/mark/visited/<int:id>")
-def mark_visited(id):
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        db = get_db()
-
-        plan = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
-            (g.user["id"], id),
-        ).fetchone()
-
-        try:
-            # update status into visited
-            db.execute(
-                "UPDATE plans SET status = 'visited' WHERE user_id = ? AND id = ?",
-                (g.user["id"], id),
-            )
-            db.commit()
-        except db.IntegrityError:
-            pass
-
-        visited = db.execute(
-            "SELECT * FROM visited WHERE user_id = ? AND fsq_id = ?",
-            (g.user["id"], plan["fsq_id"]),
-        ).fetchall()
-
-        if not visited:
-            try:
-                db.execute(
-                    "INSERT INTO visited (user_id, fsq_id) VALUES (?, ?)",
-                    (g.user["id"], plan["fsq_id"]),
-                )
-                db.commit()
-
-            except db.IntegrityError:
-                pass
-
-        close_db(db)
-
-        return redirect(request.referrer)
-
-    return asyncio.run(inner())
-
-
-@bp.route("/mark/cancel/<int:id>")
-def mark_cancel(id):
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        db = get_db()
-
-        plan = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
-            (g.user["id"], id),
-        ).fetchone()
-
-        try:
-            # update status into visited
-            db.execute(
-                "UPDATE plans SET status = 'cancelled' WHERE user_id = ? AND id = ?",
-                (g.user["id"], id),
-            )
-            db.commit()
-        except db.IntegrityError:
-            pass
-
-        close_db(db)
-
-        return redirect(request.referrer)
-
-    return asyncio.run(inner())
-
-
-@bp.route("/update/schedule/<int:id>", methods=("POST", "GET"))
-def update_schedule(id):
-    from app.auth import login_required
-
-    @login_required
-    async def inner():
-        db = get_db()
-
-        plan = db.execute(
-            "SELECT * FROM plans WHERE user_id = ? AND id = ?",
-            (g.user["id"], id),
-        ).fetchone()
-
-        if request.method == "POST":
-            date = request.form["visit-date"]
-            notes = request.form["notes"]
-
-            try:
-                db.execute(
-                    "UPDATE plans SET date = ?, notes = ? WHERE user_id = ? AND id = ?",
-                    (date, notes, g.user["id"], id),
-                )
-                db.commit()
-            except db.IntegrityError:
-                pass
-            close_db(db)
-            return redirect(request.referrer)
-
-        close_db(db)
-
-        return redirect(request.referrer)
 
     return asyncio.run(inner())

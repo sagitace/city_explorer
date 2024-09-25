@@ -22,7 +22,7 @@
                         <div class="flex items-center justify-end">
                             <a href="{{url_for('auth.reset_password_request')}}" class="text-sm font-medium text-primary-600 hover:underline text-white">Forgot password?</a>
                         </div>
-                        <button type="submit" class="w-full bg-[#E1D7B7] hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center text-[#1E2A5E] hover:bg-[#c6bc98]">Sign in</button>
+                        <button type="submit" class="w-full bg-[#E1D7B7] hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-semibold tracking-wide rounded-lg text-sm px-5 py-2.5 text-center text-[#1E2A5E] hover:bg-[#c6bc98]">Sign in</button>
                        {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 <div class="container mt-3">
@@ -48,8 +48,8 @@
                                 </div>
                             {% endif %}
                         {% endwith %}
-                        <p class="text-sm font-light text-white dark:text-gray-400">
-                            Don't have an account yet? <a href="{{url_for('auth.register')}}" class="font-medium text-primary-600 hover:underline">Register</a>
+                        <p class="text-sm font-normal text-white dark:text-gray-400 tracking-wide">
+                            Don't have an account yet? <a href="{{url_for('auth.register')}}" class="font-bold text-primary-600 hover:underline">Register</a>
                         </p>
                     </form>
                 </div>

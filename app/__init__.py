@@ -1,12 +1,13 @@
 import os
-
 from flask import Flask, render_template, redirect, url_for, g
 from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-import asyncio, aiohttp
+from itsdangerous import URLSafeTimedSerializer
+import asyncio
+import aiohttp
+from flask_migrate import Migrate
+from .models import db
 
 mail = Mail()
-s = URLSafeTimedSerializer("iojksdwyhdnmdsokmd,d/sd/wjwk")
 
 FOURSQUARE_API_KEY = "fsq3XflsHeDs8cP703mPhp/K64ZuJYHFra2NGkn+SmjbPZM="
 FOURSQUARE_API_PHOTOS_URL = "https://api.foursquare.com/v3/places/{fsq_id}/photos"
@@ -14,14 +15,23 @@ FOURSQUARE_API_URL = "https://api.foursquare.com/v3/places/search"
 
 
 def create_app():
-    # create and configure appp
+    # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY="dev",
-        DATABASE=os.path.join(app.instance_path, "app.sqlite"),
-    )
 
-    # mail configuration
+    # SQLAlchemy configuration
+    #app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+    #postgres
+    #postgresql://explorer_a53g_user:Fkt354KFUlUNTx4D1sxXCCGfmIwlLDnV@dpg-crppttrv2p9s7389tcc0-a.oregon-postgres.render.com/explorer_a53g
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
+
+    app.config["SECRET_KEY"] = "shudjnawgyhbjnkdmawk923"
+
+    # Initialize Flask-Migrate
+    migrate = Migrate(app, db)
+
+    # Mail configuration
     app.config["MAIL_SERVER"] = "smtp.gmail.com"
     app.config["MAIL_PORT"] = 465
     app.config["MAIL_USERNAME"] = "labiniace.barlas35@gmail.com"
@@ -29,9 +39,8 @@ def create_app():
     app.config["MAIL_USE_TLS"] = False
     app.config["MAIL_USE_SSL"] = True
     app.config["MAIL_DEFAULT_SENDER"] = "labiniace.barlas35@gmail.com"
-    mail.init_app(app)
 
-    app.config.from_pyfile("config.py", silent=True)
+    mail.init_app(app)
 
     try:
         os.makedirs(app.instance_path)
@@ -102,17 +111,16 @@ def create_app():
             photos_mindanao=photos_mindanao,
         )
 
-    from . import db
-
-    db.init_app(app)
-
     from . import auth
+    from . import user
+    from . import profile
+    from . import schedule
 
     app.register_blueprint(auth.bp)
-
-    from . import user
-
     app.register_blueprint(user.bp)
+    app.register_blueprint(profile.bp)
+    app.register_blueprint(schedule.bp)
+
     app.add_url_rule("/", endpoint="index")
 
     return app
