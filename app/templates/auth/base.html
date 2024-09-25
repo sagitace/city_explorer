@@ -11,6 +11,26 @@
     <link rel="stylesheet" href="{{url_for('static',filename='src/input.css')}}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            content: [
+                "./app/templates/**/*.html",
+                "./app/static/src/**/*.js",
+                "./node_modules/flowbite/**/*.js",
+            ],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ["Roboto", "sans-serif"],
+                    },
+                },
+            },
+            plugins: [
+                require("flowbite/plugin")
+            ],
+        }
+    </script>
 </head>
 <body class="font-display">
     <section>

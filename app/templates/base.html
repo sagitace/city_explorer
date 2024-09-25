@@ -9,6 +9,26 @@
     <link rel="shortcut icon" href="{{url_for('static',filename='favicon.ico')}}" type="image/x-icon">
     <link rel="stylesheet" href="{{url_for('static',filename='dist/css/output.css')}}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            content: [
+                "./app/templates/**/*.html",
+                "./app/static/src/**/*.js",
+                "./node_modules/flowbite/**/*.js",
+            ],
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ["Roboto", "sans-serif"],
+                    },
+                },
+            },
+            plugins: [
+                require("flowbite/plugin")
+            ],
+        }
+    </script>
+
 </head>
 <body class="bg-slate-100 font-display">
     <nav class="bg-white border-gray-200 px-2 sm:px-4 py-2.5 rounded">
