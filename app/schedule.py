@@ -31,8 +31,13 @@ def index():
 
     @login_required
     async def inner():
-        schedules = db.session.execute(db.select(Plans).order_by(Plans.date)).scalars()
-
+        schedules = db.session.execute(
+            db.select(Plans).where(Plans.user_id == g.user.id).order_by(Plans.date)
+        ).scalars()
+        # based on user id
+        # schedules = db.session.execute(
+        #     db.select(Plans).where(Plans.user_id == g.user.id).order_by(Plans.date)
+        # )
         upcoming = []
         visited = []
         missed = []
@@ -64,6 +69,12 @@ def index():
                 missed.append(schedule)
             elif schedule.status == "cancelled":
                 cancelled.append(schedule)
+
+        # sort visited, missed, and cancelled
+        visited = sorted(visited, key=lambda x: x.date)
+        missed = sorted(missed, key=lambda x: x.date)
+        cancelled = sorted(cancelled, key=lambda x: x.date)
+
         # Query for schedules
         schedules_query = (
             select(Plans)

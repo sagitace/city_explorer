@@ -72,7 +72,7 @@ def register():
             try:
                 mail.send(msg)
                 flash(
-                    "A verification email has been sent to your email address! It is valid for 1 hour. Please check your email to proceed.",
+                    "Verification email sent! It's valid for 1 hour. Please check your inbox to proceed.",
                     "info",
                 )
             except Exception as e:
@@ -178,7 +178,7 @@ def reset_password_request():
                 try:
                     mail.send(msg)
                     flash(
-                        "A password reset link has been sent to your email address. It is valid for 1 hour. Please check your email to proceed.",
+                        "Password reset link sent! It's valid for 1 hour. Check your email to proceed.",
                         "success",
                     )
                 except Exception as e:
@@ -266,9 +266,24 @@ def logout():
 def login_required(view):
     @functools.wraps(view)
     async def wrapped_view(*args, **kwargs):
-        if g.user is None or not g.user.verified:
+        if g.user is None:
+            flash("Please login to access this page.", "warning")
+        elif g.user.verified == "false":
             flash("Please verify your email before accessing this page.", "warning")
-            return redirect(url_for("auth.login"))
+        else:
+            return await view(*args, **kwargs)
+
+        return redirect(url_for("auth.login"))
+
+        # if g.user is None:
+        #     flash("Please login to access this page.", "warning")
+        #     return redirect(url_for("auth.login"))
+        # if g.user is None or g.user.verified == "false":
+        #     if g.user is None:
+        #         flash("Please login to access this page.", "warning")
+        #     if g.user.verified == "false":
+        #         flash("Please verify your email before accessing this page.", "warning")
+        #     return redirect(url_for("auth.login"))
 
         return await view(*args, **kwargs)
 
