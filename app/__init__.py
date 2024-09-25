@@ -20,12 +20,9 @@ def create_app():
 
     # SQLAlchemy configuration
     #app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
     #postgres
-    if os.getenv('DATABASE_URL'):
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv('DATABASE_URL').replace("postgres://", "postgresql://", 1)
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
-    
+    #postgresql://explorer_a53g_user:Fkt354KFUlUNTx4D1sxXCCGfmIwlLDnV@dpg-crppttrv2p9s7389tcc0-a.oregon-postgres.render.com/explorer_a53g
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
@@ -125,10 +122,5 @@ def create_app():
     app.register_blueprint(schedule.bp)
 
     app.add_url_rule("/", endpoint="index")
-    @app.cli.command('init_db')
-    def initialize_database():
-        """Initialize the database."""
-        db.drop_all()
-        db.create_all()
-        echo('Initialized the database!')
+
     return app
