@@ -5,22 +5,47 @@
 {% block content %}
     <section class="max-w-screen-xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="w-full px-6 pb-8 sm:max-w-xl sm:rounded-lg">
-                <h2 class="pl-6 text-2xl font-bold sm:text-xl">Profile</h2>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Edit Profile</h2>
 
                 <div class="grid max-w-2xl mx-auto mt-8">
                     <div class="flex flex-col items-center space-y-5 sm:flex-row sm:space-y-0">
 
-                        <img class="object-cover w-40 h-40 p-1 rounded-full ring-2 ring-indigo-300 dark:ring-indigo-500"
+                        <img class="object-cover w-28 h-28 p-1 rounded-full ring-2 ring-indigo-300 dark:ring-indigo-500"
                             src="{{url_for('static', filename='assets/characters/' + g.user.character)}}"
                             alt="Bordered avatar">
 
                         <div class="flex flex-col space-y-5 sm:ml-8">
                             <button type="button" id="readProductButton" data-modal-target="readProductModal" data-modal-toggle="readProductModal"
-                                class="py-3.5 px-7 text-base font-medium text-indigo-100 focus:outline-none bg-indigo-800 rounded-lg border border-indigo-200 hover:bg-indigo-900 ">
-                                Change Avatar
+                                    class="text-white bg-indigo-700  hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800">
+                                    Change Avatar
                             </button>
                         </div>
                     </div>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                <div class="container mt-3">
+                                {% for category, message in messages %}
+                                    {% if category == 'warning' %}
+                                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'success' %}
+                                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% elif category == 'danger' %}
+                                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-2 mb-4" role="alert">
+                                        <p>{{ message }}</p>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
 
                     <!-- Main modal -->
                     <div id="readProductModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full bg-black bg-opacity-70">
@@ -41,35 +66,35 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <form action="{{url_for('user.update_character')}}" method="POST">
+                                    <form action="{{url_for('profile.update_character')}}" method="POST">
                                         <div>
                                             <div class="grid max-sm:grid-cols-2 sm:grid-cols-4 gap-2 items-center justify-center">
                                                 <div class="flex justify-center">
                                                     <label for="character1" class="cursor-pointer">
                                                         <input type="radio" id="character1" name="character" value="character1.svg" class="sr-only peer" {% if g.user.character == "character1.svg" %} checked {% endif %}>
 
-                                                        <img src="{{ url_for('static', filename='assets/characters/character1.svg') }}" alt="Character 1" class="h-24 w-24 peer-checked:border-blue-600 peer-checked:border-2 peer-checked:rounded-full object-cover rounded-full">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character1.svg') }}" alt="Character 1" class="h-24 w-24 peer-checked:border-blue-700 peer-checked:border-4 p-[1px] peer-checked:rounded-full object-cover rounded-full transition-all ease-in-out duration-100">
                                                     </label>
                                                 </div>
                                                 <div class="flex justify-center">
                                                     <label for="character2" class="cursor-pointer">
                                                         <input type="radio" id="character2" name="character" value="character2.svg" class="sr-only peer" {% if g.user.character == "character2.svg" %} checked {% endif %}>
 
-                                                        <img src="{{ url_for('static', filename='assets/characters/character2.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-600 peer-checked:border-2 peer-checked:rounded-full object-cover rounded-full">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character2.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-700 peer-checked:border-4 p-[1px] peer-checked:rounded-full object-cover rounded-full transition-all ease-in-out duration-100">
                                                     </label>
                                                 </div>
                                                 <div class="flex justify-center">
                                                     <label for="character3" class="cursor-pointer">
                                                         <input type="radio" id="character3" name="character" value="character3.svg" class="sr-only peer" {% if g.user.character == "character3.svg" %} checked {% endif %}>
 
-                                                        <img src="{{ url_for('static', filename='assets/characters/character3.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-600 peer-checked:border-2 peer-checked:rounded-full object-cover rounded-full">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character3.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-700 peer-checked:border-4 p-[1px] peer-checked:rounded-full object-cover rounded-full transition-all ease-in-out duration-100">
                                                     </label>
                                                 </div>
                                                 <div class="flex justify-center">
                                                     <label for="character4" class="cursor-pointer">
                                                         <input type="radio" id="character4" name="character" value="character4.svg" class="sr-only peer" {% if g.user.character == "character4.svg" %} checked {% endif %}>
 
-                                                        <img src="{{ url_for('static', filename='assets/characters/character4.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-600 peer-checked:border-2 peer-checked:rounded-full object-cover rounded-full">
+                                                        <img src="{{ url_for('static', filename='assets/characters/character4.svg') }}" alt="Character 1" class="h-24 w-24 md:h-28 md:w-28 peer-checked:border-blue-700 peer-checked:border-4 p-[1px] peer-checked:rounded-full object-cover rounded-full transition-all ease-in-out duration-100">
                                                     </label>
                                                 </div>
                                             </div>
@@ -82,7 +107,7 @@
                         </div>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" action="{{url_for('profile.index')}}">
                         <div class="items-center mt-8 sm:mt-14 text-[#202142]">
 
                             <div
@@ -129,7 +154,9 @@
 
                             <div class="flex justify-end">
                                 <button type="submit"
-                                    class="text-white bg-indigo-700  hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800">Save</button>
+                                    class="text-white bg-indigo-700  hover:bg-indigo-800 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800">
+                                    Save
+                                </button>
                             </div>
 
                         </div>

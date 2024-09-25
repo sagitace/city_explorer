@@ -160,13 +160,13 @@
             </div>
            <div class="grid max-md:grid-cols-1 md:grid-cols-2 gap-2 bg-white items-center p-5 md:w-10/12 shadow-md rounded-lg">
                 <div class="pt-5">
-                    {% if plans and plans['status'] == 'upcoming' %}
+                    {% if plans and plans.status == 'upcoming' %}
                         <div class="p-6 max-w-md mx-auto">
                             <h2 class="mb-4 text-2xl font-semibold text-gray-900 ">Upcoming Visit</h2>
                             <div class="mb-4">
                                 <h3 class="text-lg font-medium text-gray-800 ">{{ plans.formatted_date }}</h3>
                                 {% if plans.notes %}
-                                    <p class="text-gray-600 ">{{ plans.notes }}</p>
+                                    <p class="text-gray-600 line-clamp-3">Notes: {{ plans.notes }}</p>
                                 {% else %}
                                     <p class="text-gray-600">No notes</p>
                                 {% endif %}
@@ -176,6 +176,31 @@
                                 Change of plans? Update your schedule 
                                 <button id="updateProductButton" data-modal-target="updateProductModal" data-modal-toggle="updateProductModal" class="text-blue-600 hover:underline">here</button>.
                             </p>
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    <div class="container mt-3">
+                                    {% for category, message in messages %}
+                                        {% if category == 'warning' %}
+                                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-2 mb-4" role="alert">
+                                            <p>{{ message }}</p>
+                                        </div>
+                                        {% elif category == 'success' %}
+                                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-2 mb-4" role="alert">
+                                            <p>{{ message }}</p>
+                                        </div>
+                                        {% elif category == 'danger' %}
+                                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-2 mb-4" role="alert">
+                                            <p>{{ message }}</p>
+                                        </div>
+                                        {% else %}
+                                        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-2 mb-4" role="alert">
+                                            <p>{{ message }}</p>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
                         </div>
                         <!-- Main modal -->
                         <div id="updateProductModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full">
@@ -193,7 +218,7 @@
                                         </button>
                                     </div>
                                     <!-- Modal body -->
-                                    <form action="{{url_for('user.update_schedule', id=plans.id)}}" method="POST">
+                                    <form action="{{url_for('schedule.update_schedule', id=plans.id)}}" method="POST">
                                         <div class="grid gap-4 mb-4 sm:grid-cols-2">
                                             <div class="sm:col-span-2">
                                                 <label for="visit-date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Date</label>
@@ -216,7 +241,7 @@
                         
                     {% else %}
                         <h2 class="mb-10 text-xl font-bold text-gray-900 dark:text-white">Excited to Explore? Plan Your Visit Now!</h2>
-                        <form action="{{url_for('user.add_to_plans')}}" method="POST">
+                        <form action="{{url_for('schedule.add_to_plans')}}" method="POST">
                             <div class="grid gap-4 sm:grid-cols-2 sm:gap-6">
                                 <input type="hidden" name="fsq_id" value="{{ place.fsq_id }}">
                                 <input type="hidden" name="place_name" value="{{ place.name }}">
@@ -396,18 +421,20 @@
                         {% for child in place.related_places.children %}
                             {% if child.photos and child.photos[0] %}
                                 <article class="p-4 bg-white rounded-lg border border-gray-200 shadow-md flex flex-col h-auto">
-                                    <div class="overflow-hidden w-full h-36 rounded-md">
-                                        <img src="{{ child.photos[0].prefix }}1920x1440{{ child.photos[0].suffix }}" alt="Photo of {{ child.name }}" class="w-full h-36 object-cover rounded-md hover:scale-110 transition-all ease-in-out duration-300">
-                                    </div>
-                                    <h2 class="mb-2 text-base font-bold tracking-tight text-gray-900">
-                                        <a href="{{ url_for('user.place_info', fsq_id=child.fsq_id) }}">{{ child.name }}</a>
-                                    </h2>
+                                    <a href="{{ url_for('user.place_info', fsq_id=child.fsq_id) }}">
+                                        <div class="overflow-hidden w-full h-36 rounded-md">
+                                            <img src="{{ child.photos[0].prefix }}1920x1440{{ child.photos[0].suffix }}" alt="Photo of {{ child.name }}" class="w-full h-36 object-cover rounded-md hover:scale-110 transition-all ease-in-out duration-300">
+                                        </div>
+                                        <h2 class="mb-2 text-base font-bold tracking-tight text-gray-900">
+                                            {{ child.name }}
+                                        </h2>
 
-                                    <div class="flex gap-1">
-                                        <p class="flex text-xs font-semibold text-white mb-1">
-                                            <span class="rounded-lg bg-blue-900 px-2 py-1">{{ child.categories[0].short_name }}</span>
-                                        </p>
-                                    </div>
+                                        <div class="flex gap-1">
+                                            <p class="flex text-xs font-semibold text-white mb-1">
+                                                <span class="rounded-lg bg-blue-900 px-2 py-1">{{ child.categories[0].short_name }}</span>
+                                            </p>
+                                        </div>
+                                    </a>
                                 </article>
                             {% endif %}
                         {% endfor %}
