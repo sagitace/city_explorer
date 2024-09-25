@@ -12,7 +12,7 @@ from werkzeug.exceptions import abort
 import requests
 import asyncio, aiohttp, json, os
 import random  # for default location
-import functools  # for database .fetchone() method
+import functools  # for database .fetchone() and other methods
 from datetime import datetime
 from sqlalchemy import select, desc
 from sqlalchemy.exc import IntegrityError
@@ -27,6 +27,7 @@ FOURSQUARE_API_KEY = "fsq3XflsHeDs8cP703mPhp/K64ZuJYHFra2NGkn+SmjbPZM="
 FOURSQUARE_API_PHOTOS_URL = "https://api.foursquare.com/v3/places/{fsq_id}/photos"
 FOURSQUARE_API_TIPS = "https://api.foursquare.com/v3/places/{fsq_id}/tips"
 FOURSQUARE_API_DETAILS = "https://api.foursquare.com/v3/places/{fsq_id}"
+
 OPENWEATHERMAP_API_KEY = "3495e8b531e0caf889157008e17fcca6"
 
 
@@ -189,9 +190,12 @@ def index():
         )
 
         schedules = db.session.execute(schedules_query).all()
-
-        for row in schedules:
-            schedule = row[0]
+        
+        getSchedules = db.session.execute(
+            db.select(Plans).where(Plans.user_id == g.user.id).order_by(Plans.date)
+        ).scalars()
+                
+        for schedule in getSchedules:
             if (
                 schedule.date < datetime.now().strftime("%Y-%m-%d")
                 and schedule.status == "upcoming"
