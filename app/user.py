@@ -23,7 +23,7 @@ from .models import *
 bp = Blueprint("user", __name__, url_prefix="/user")
 
 FOURSQUARE_API_URL = "https://api.foursquare.com/v3/places/search"
-FOURSQUARE_API_KEY = "fsq3XflsHeDs8cP703mPhp/K64ZuJYHFra2NGkn+SmjbPZM="
+FOURSQUARE_API_KEY = "fsq3kvJnZfCZJ4Q/FisvW70Q6jsWccEILRQBVwIxLX4TUxE="
 FOURSQUARE_API_PHOTOS_URL = "https://api.foursquare.com/v3/places/{fsq_id}/photos"
 FOURSQUARE_API_TIPS = "https://api.foursquare.com/v3/places/{fsq_id}/tips"
 FOURSQUARE_API_DETAILS = "https://api.foursquare.com/v3/places/{fsq_id}"
@@ -176,7 +176,7 @@ def index():
         categories = "12000,19000,16000,17000,10000,13000"
         places = await get_places_data(city, categories)
         myvisited = await get_visited_places_data(visited)
-
+       
         unvisited_places = [place for place in places if not place["visited"]]
         unvisited_places = unvisited_places[:3]
 
@@ -190,11 +190,11 @@ def index():
         )
 
         schedules = db.session.execute(schedules_query).all()
-        
+
         getSchedules = db.session.execute(
             db.select(Plans).where(Plans.user_id == g.user.id).order_by(Plans.date)
         ).scalars()
-                
+
         for schedule in getSchedules:
             if (
                 schedule.date < datetime.now().strftime("%Y-%m-%d")
